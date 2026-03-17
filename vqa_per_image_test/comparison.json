@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-02-06T14:31:30.972571",
+  "models": {
+    "florence2": {
+      "total_samples": 12,
+      "metrics": {
+        "exact_match": 0.0,
+        "bleu": 0.0029448587868193565,
+        "per_question": {
+          "main_obstacle": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          },
+          "closest_obstacle": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          },
+          "risk_assessment": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          },
+          "spatial_clock": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          },
+          "action_suggestion": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          },
+          "action_command": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 2
+          }
+        },
+        "avg_inference_time_s": 0.836013654867808,
+        "total_inference_time_s": 10.032163858413696
+      }
+    }
+  }
+}

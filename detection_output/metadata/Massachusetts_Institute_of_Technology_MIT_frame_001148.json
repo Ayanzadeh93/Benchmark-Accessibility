@@ -1,0 +1,197 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001148.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:53:23.595456",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "sign",
+    "hallway",
+    "door",
+    "corkboard",
+    "pipe",
+    "fire alarm",
+    "number plate",
+    "window",
+    "bulletin board",
+    "poster",
+    "text",
+    "electrical outlet",
+    "frame",
+    "door handle",
+    "door frame",
+    "door knob",
+    "door lock",
+    "door hinge",
+    "door stop"
+  ],
+  "num_detections": 5,
+  "detections": [
+    {
+      "class_id": 4,
+      "class_name": "corkboard",
+      "confidence": 0.542113721370697,
+      "x_center": 0.19263434608777363,
+      "y_center": 0.5625665382102684,
+      "width": 0.35846388737360635,
+      "height": 0.700759619253653,
+      "bbox_xyxy": [
+        25.73261260986328,
+        229.1616668701172,
+        713.9832763671875,
+        985.9820556640625
+      ]
+    },
+    {
+      "class_id": 0,
+      "class_name": "exit sign",
+      "confidence": 0.5127636194229126,
+      "x_center": 0.8128271102905273,
+      "y_center": 0.2613812623200593,
+      "width": 0.06628392537434896,
+      "height": 0.09819107055664063,
+      "bbox_xyxy": [
+        1496.9954833984375,
+        229.26858520507812,
+        1624.2606201171875,
+        335.31494140625
+      ]
+    },
+    {
+      "class_id": 3,
+      "class_name": "door",
+      "confidence": 0.48681074380874634,
+      "x_center": 0.5705648740132649,
+      "y_center": 0.7110504432960792,
+      "width": 0.025855445861816408,
+      "height": 0.29436651159215854,
+      "bbox_xyxy": [
+        1070.663330078125,
+        608.9765625,
+        1120.3057861328125,
+        926.8923950195312
+      ]
+    },
+    {
+      "class_id": 3,
+      "class_name": "door",
+      "confidence": 0.4824589192867279,
+      "x_center": 0.5350492000579834,
+      "y_center": 0.7130576522262008,
+      "width": 0.04489946365356445,
+      "height": 0.3736475626627604,
+      "bbox_xyxy": [
+        984.1909790039062,
+        568.3325805664062,
+        1070.39794921875,
+        971.8719482421875
+      ]
+    },
+    {
+      "class_id": 6,
+      "class_name": "fire alarm",
+      "confidence": 0.4712012708187103,
+      "x_center": 0.2858114242553711,
+      "y_center": 0.1714379734463162,
+      "width": 0.06560815175374349,
+      "height": 0.1446949217054579,
+      "bbox_xyxy": [
+        485.77410888671875,
+        107.01775360107422,
+        611.7417602539062,
+        263.28826904296875
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001148.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "hallway",
+        "door",
+        "corkboard",
+        "exit sign",
+        "light",
+        "pipe",
+        "ceiling",
+        "floor",
+        "fire alarm",
+        "sign",
+        "number plate",
+        "window",
+        "bulletin board",
+        "poster",
+        "text",
+        "building",
+        "wall",
+        "lamp",
+        "electrical outlet",
+        "frame",
+        "door handle",
+        "door frame",
+        "door knob",
+        "door lock",
+        "door hinge",
+        "door stop",
+        "door latch",
+        "door sill",
+        "door threshold"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "sign"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [],
+        "technology": [],
+        "other": [
+          "hallway",
+          "door",
+          "corkboard",
+          "light",
+          "pipe",
+          "ceiling",
+          "floor",
+          "fire alarm",
+          "number plate",
+          "window",
+          "bulletin board",
+          "poster",
+          "text",
+          "building",
+          "wall",
+          "lamp",
+          "electrical outlet",
+          "frame",
+          "door handle",
+          "door frame",
+          "door knob",
+          "door lock",
+          "door hinge",
+          "door stop",
+          "door latch",
+          "door sill",
+          "door threshold"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 29,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:53:22.149624"
+    }
+  }
+}

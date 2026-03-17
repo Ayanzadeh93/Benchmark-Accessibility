@@ -1,0 +1,259 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001248.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:29:39.701765",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "elevator sign",
+    "exit sign",
+    "number 3 sign",
+    "ramp",
+    "cabinet",
+    "hallway",
+    "door",
+    "fire alarm",
+    "trash can",
+    "clock",
+    "light fixture",
+    "pipe",
+    "board",
+    "wooden frame",
+    "plastic wrap",
+    "whiteboard",
+    "text",
+    "label",
+    "electrical outlet",
+    "window"
+  ],
+  "num_detections": 7,
+  "detections": [
+    {
+      "class_id": 8,
+      "class_name": "trash can",
+      "confidence": 0.8102390766143799,
+      "x_center": 0.4797969818115234,
+      "y_center": 0.8064512464735243,
+      "width": 0.024913978576660157,
+      "height": 0.1072811550564236,
+      "bbox_xyxy": [
+        897.2927856445312,
+        813.0355224609375,
+        945.1276245117188,
+        928.899169921875
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 8,
+      "class_name": "trash can",
+      "confidence": 0.7678549289703369,
+      "x_center": 0.21958818435668945,
+      "y_center": 0.9521226105866609,
+      "width": 0.1425638198852539,
+      "height": 0.09575477882667824,
+      "bbox_xyxy": [
+        284.748046875,
+        976.5848388671875,
+        558.4705810546875,
+        1080.0
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 18,
+      "class_name": "electrical outlet",
+      "confidence": 0.7330976128578186,
+      "x_center": 0.0515053927898407,
+      "y_center": 0.701379140218099,
+      "width": 0.04032091697057088,
+      "height": 0.07911552146629051,
+      "bbox_xyxy": [
+        60.182273864746094,
+        714.76708984375,
+        137.5984344482422,
+        800.2118530273438
+      ]
+    },
+    {
+      "class_id": 7,
+      "class_name": "fire alarm",
+      "confidence": 0.7310656905174255,
+      "x_center": 0.8555283546447754,
+      "y_center": 0.2120637469821506,
+      "width": 0.06063416798909505,
+      "height": 0.11583923057273582,
+      "bbox_xyxy": [
+        1584.4056396484375,
+        166.4756622314453,
+        1700.8232421875,
+        291.58203125
+      ]
+    },
+    {
+      "class_id": 6,
+      "class_name": "door",
+      "confidence": 0.4909434914588928,
+      "x_center": 0.29852420488993325,
+      "y_center": 0.6984235975477431,
+      "width": 0.07883774439493815,
+      "height": 0.5995200828269676,
+      "bbox_xyxy": [
+        497.48223876953125,
+        430.556640625,
+        648.8507080078125,
+        1078.038330078125
+      ]
+    },
+    {
+      "class_id": 16,
+      "class_name": "text",
+      "confidence": 0.4898035526275635,
+      "x_center": 0.053634650508562726,
+      "y_center": 0.9514265554922599,
+      "width": 0.07141671379407247,
+      "height": 0.060174051920572916,
+      "bbox_xyxy": [
+        34.41848373413086,
+        995.0466918945312,
+        171.53857421875,
+        1060.03466796875
+      ]
+    },
+    {
+      "class_id": 15,
+      "class_name": "whiteboard",
+      "confidence": 0.46965065598487854,
+      "x_center": 0.04026020715634028,
+      "y_center": 0.567312169958044,
+      "width": 0.06507491370042165,
+      "height": 0.18760669849537037,
+      "bbox_xyxy": [
+        14.827680587768555,
+        511.3895263671875,
+        139.77151489257812,
+        714.0047607421875
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001248.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "hallway",
+        "door",
+        "elevator",
+        "fire alarm",
+        "trash can",
+        "clock",
+        "light fixture",
+        "ceiling",
+        "pipe",
+        "wall",
+        "floor",
+        "board",
+        "wooden frame",
+        "plastic wrap",
+        "whiteboard",
+        "exit sign",
+        "number 3 sign",
+        "text",
+        "label",
+        "electrical outlet",
+        "cabinet",
+        "window",
+        "mirror",
+        "ladder",
+        "building",
+        "stairs",
+        "ramp",
+        "shower curtain",
+        "towel rack",
+        "toilet paper dispenser",
+        "hand sanitizer dispenser",
+        "water fountain",
+        "seating area",
+        "umbrella stand",
+        "garden",
+        "tree",
+        "plant",
+        "flower pot",
+        "potted plant",
+        "bird feeder",
+        "bird bath",
+        "bird cage",
+        "birdhouse"
+      ],
+      "categories": {
+        "signs": [
+          "elevator",
+          "exit sign",
+          "number 3 sign"
+        ],
+        "accessibility": [
+          "ramp"
+        ],
+        "people": [],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "hallway",
+          "door",
+          "fire alarm",
+          "trash can",
+          "clock",
+          "light fixture",
+          "ceiling",
+          "pipe",
+          "wall",
+          "floor",
+          "board",
+          "wooden frame",
+          "plastic wrap",
+          "whiteboard",
+          "text",
+          "label",
+          "electrical outlet",
+          "window",
+          "mirror",
+          "ladder",
+          "building",
+          "stairs",
+          "shower curtain",
+          "towel rack",
+          "toilet paper dispenser",
+          "hand sanitizer dispenser",
+          "water fountain",
+          "seating area",
+          "umbrella stand",
+          "garden",
+          "tree",
+          "plant",
+          "flower pot",
+          "potted plant",
+          "bird feeder",
+          "bird bath",
+          "bird cage",
+          "birdhouse"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 43,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:29:38.397053"
+    }
+  }
+}

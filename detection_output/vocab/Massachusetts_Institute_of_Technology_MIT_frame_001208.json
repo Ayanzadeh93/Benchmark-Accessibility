@@ -1,0 +1,16 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001208.jpg",
+  "timestamp": "2026-01-23T13:15:19.933959",
+  "vlm_model": "qwen",
+  "used_vlm_json": null,
+  "classes": [
+    "rle",
+    "door",
+    "window",
+    "pipe",
+    "hallway",
+    "sign",
+    "vent",
+    "university walk tour"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001183.jpg",
+  "timestamp": "2026-01-23T13:06:01.964694",
+  "vlm_model": "qwen",
+  "used_vlm_json": null,
+  "classes": [
+    "stairs",
+    "handrail",
+    "window",
+    "pipe",
+    "valve",
+    "fire extinguisher",
+    "door",
+    "light fixture",
+    "radiator",
+    "text",
+    "label",
+    "frame",
+    "structure",
+    "cable",
+    "tubing",
+    "metallic pipe",
+    "white wall",
+    "black wall",
+    "red valve",
+    "green label"
+  ]
+}

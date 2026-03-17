@@ -1,0 +1,15 @@
+metric,value
+model,florence2
+total_samples,12
+total_failed,0
+exact_match,0.0000
+bleu,0.0029
+avg_inference_time_s,0.8360
+
+question_type,accuracy,correct,total
+main_obstacle,0.0000,0,2
+closest_obstacle,0.0000,0,2
+risk_assessment,0.0000,0,2
+spatial_clock,0.0000,0,2
+action_suggestion,0.0000,0,2
+action_command,0.0000,0,2

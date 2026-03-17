@@ -1,0 +1,248 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001187.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:07:24.285343",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "red exit sign",
+    "person",
+    "cabinet",
+    "picture frame",
+    "board",
+    "window",
+    "vent",
+    "air conditioner",
+    "door",
+    "painting",
+    "bulletin board",
+    "poster",
+    "text",
+    "tree",
+    "electrical outlet",
+    "frame",
+    "door handle",
+    "window sill",
+    "molded edge"
+  ],
+  "num_detections": 6,
+  "detections": [
+    {
+      "class_id": 4,
+      "class_name": "picture frame",
+      "confidence": 0.9138930439949036,
+      "x_center": 0.3495229403177897,
+      "y_center": 0.6622145476164641,
+      "width": 0.054583295186360674,
+      "height": 0.18000544795283566,
+      "bbox_xyxy": [
+        618.68408203125,
+        617.98876953125,
+        723.4840087890625,
+        812.3946533203125
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 11,
+      "class_name": "bulletin board",
+      "confidence": 0.732151985168457,
+      "x_center": 0.19059446652730305,
+      "y_center": 0.6724144547073929,
+      "width": 0.08769381841023763,
+      "height": 0.11228620741102431,
+      "bbox_xyxy": [
+        281.75531005859375,
+        665.5730590820312,
+        450.12744140625,
+        786.8421630859375
+      ]
+    },
+    {
+      "class_id": 4,
+      "class_name": "picture frame",
+      "confidence": 0.590587854385376,
+      "x_center": 0.19097889264424642,
+      "y_center": 0.674677813494647,
+      "width": 0.08553088506062825,
+      "height": 0.10075446234809028,
+      "bbox_xyxy": [
+        284.56982421875,
+        674.24462890625,
+        448.78912353515625,
+        783.0594482421875
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 0,
+      "class_name": "exit sign",
+      "confidence": 0.5337957143783569,
+      "x_center": 0.9405758857727051,
+      "y_center": 0.16609716062192564,
+      "width": 0.10123475392659505,
+      "height": 0.11760875560619213,
+      "bbox_xyxy": [
+        1708.7203369140625,
+        115.87620544433594,
+        1903.091064453125,
+        242.89366149902344
+      ]
+    },
+    {
+      "class_id": 13,
+      "class_name": "text",
+      "confidence": 0.4827476739883423,
+      "x_center": 0.053419401248296104,
+      "y_center": 0.9523722613299335,
+      "width": 0.07071672677993775,
+      "height": 0.061654267487702544,
+      "bbox_xyxy": [
+        34.67719268798828,
+        995.2687377929688,
+        170.45330810546875,
+        1061.8553466796875
+      ]
+    },
+    {
+      "class_id": 18,
+      "class_name": "window sill",
+      "confidence": 0.45393773913383484,
+      "x_center": 0.7269589900970459,
+      "y_center": 0.8866089714898003,
+      "width": 0.5416750272115072,
+      "height": 0.15402023880570023,
+      "bbox_xyxy": [
+        875.7532348632812,
+        874.3667602539062,
+        1915.769287109375,
+        1040.7086181640625
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001187.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "exit sign",
+        "picture frame",
+        "board",
+        "window",
+        "ceiling",
+        "floor",
+        "column",
+        "light",
+        "vent",
+        "air conditioner",
+        "door",
+        "wall",
+        "painting",
+        "bulletin board",
+        "poster",
+        "text",
+        "building",
+        "tree",
+        "person",
+        "cabinet",
+        "lamp",
+        "electrical outlet",
+        "frame",
+        "door handle",
+        "window sill",
+        "molded edge",
+        "grout",
+        "tile",
+        "painted wall",
+        "white wall",
+        "yellow wall",
+        "black tile",
+        "gray floor",
+        "red exit sign",
+        "blue door",
+        "green door",
+        "white door",
+        "white ceiling",
+        "white light",
+        "white vent",
+        "white air conditioner",
+        "white window",
+        "white column",
+        "white floor",
+        "white paint"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "red exit sign"
+        ],
+        "accessibility": [],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "picture frame",
+          "board",
+          "window",
+          "ceiling",
+          "floor",
+          "column",
+          "light",
+          "vent",
+          "air conditioner",
+          "door",
+          "wall",
+          "painting",
+          "bulletin board",
+          "poster",
+          "text",
+          "building",
+          "tree",
+          "lamp",
+          "electrical outlet",
+          "frame",
+          "door handle",
+          "window sill",
+          "molded edge",
+          "grout",
+          "tile",
+          "painted wall",
+          "white wall",
+          "yellow wall",
+          "black tile",
+          "gray floor",
+          "blue door",
+          "green door",
+          "white door",
+          "white ceiling",
+          "white light",
+          "white vent",
+          "white air conditioner",
+          "white window",
+          "white column",
+          "white floor",
+          "white paint"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 45,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:07:22.833730"
+    }
+  }
+}

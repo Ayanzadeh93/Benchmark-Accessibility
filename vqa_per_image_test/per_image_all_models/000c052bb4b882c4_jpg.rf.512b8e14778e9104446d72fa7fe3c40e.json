@@ -1,0 +1,64 @@
+{
+  "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+  "models": [
+    "florence2"
+  ],
+  "predictions_by_model": {
+    "florence2": [
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|main_obstacle",
+        "question_id": "main_obstacle",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "What is the main obstacle or barrier in this scene?",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "Obstacle in your front: person",
+        "inference_time_s": 0.7248470783233643
+      },
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|closest_obstacle",
+        "question_id": "closest_obstacle",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "Which object is closest to the user?",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "Obstacle in your front: person",
+        "inference_time_s": 0.7248470783233643
+      },
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|risk_assessment",
+        "question_id": "risk_assessment",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "How safe is this scene for blind users?",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "Low risk - path clear, safe to proceed",
+        "inference_time_s": 0.7248470783233643
+      },
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|spatial_clock",
+        "question_id": "spatial_clock",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "Locate the Obstacle in your front: person based on clock direction.",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "12 o'clock",
+        "inference_time_s": 0.7248470783233643
+      },
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|action_suggestion",
+        "question_id": "action_suggestion",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "What action do you suggest to the user in this scene?",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "Person directly ahead is waving; navigate around them to access kitchen areas safely.",
+        "inference_time_s": 0.7248470783233643
+      },
+      {
+        "id": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e|action_command",
+        "question_id": "action_command",
+        "image": "000c052bb4b882c4_jpg.rf.512b8e14778e9104446d72fa7fe3c40e.jpg",
+        "question": "What is the recommended navigation action for a blind user in this situation?",
+        "predicted_answer": "The image shows an elderly woman standing in a kitchen with her arms raised in the air. She is wearing a red sweater with white snowflakes on it and a white beret on her head. She has a big smile on her face and appears to be happy and excited.",
+        "reference_answer": "Slow down, Obstacle in your front: person ahead.",
+        "inference_time_s": 0.7248470783233643
+      }
+    ]
+  }
+}

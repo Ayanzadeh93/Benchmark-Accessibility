@@ -1,0 +1,152 @@
+# Floorplan + Obstacle Detection Integration
+
+Merge the two independently-finished subsystems — the **floorplan parsing** (Agentic-RAG 5-agent pipeline) and the **obstacle detection** (EnhancedObstacleDetector, DFPN, RiskEngine) — into a single cohesive AidGPT experience inside [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py).
+
+The user can:
+1. **Run obstacle detection alone** (as today — always active)
+2. **Open a Floorplan Tab** (`P` key) which runs the pipeline in the background and shows a rich side panel with the parsed map, navigation steps, and safety status
+3. The parsed **nav steps** are also fed into the existing navigation guidance panel (press `N`) so the blind user hears and sees floor-plan-aware routing *on top of* real-time obstacle alerts
+
+---
+
+## Proposed Changes
+
+---
+
+### ApplicationState
+
+#### [MODIFY] [application_state.py](file:///c:/Tim/AIDGPT/AidGPT/core/application_state.py)
+
+Add a new **Floorplan** block of state fields (after the DFPN block):
+
+```python
+# Floorplan parsing / Agentic-RAG integration
+self.floorplan_mode: bool = False          # panel visible (toggle 'P')
+self.floorplan_running: bool = False       # pipeline thread active
+self.floorplan_image_path: str = ""        # last loaded image
+self.floorplan_start: str = ""
+self.floorplan_destination: str = ""
+self.floorplan_result = None               # PipelineResult when done
+self.floorplan_nav_index: int = 0          # current step
+self.floorplan_status: str = "idle"        # idle | running | done | error
+self.floorplan_error: str = ""
+self.floorplan_panel_frame: Optional[np.ndarray] = None
+```
+
+---
+
+### UI — New Floorplan Panel
+
+#### [NEW] [floorplan_panel.py](file:///c:/Tim/AIDGPT/AidGPT/ui/floorplan_panel.py)
+
+Renders a 400-px-wide side panel with:
+- **Header** — "FLOORPLAN" title + status badge (IDLE / RUNNING / DONE / ERROR)
+- **Route banner** — `Start → Destination` with node count
+- **Progress indicator** — animated spinner while pipeline runs; success/fail icon when done
+- **Current Step card** — the active nav step with action, sensory feedback, confirmation
+- **Step list** — scrollable numbered list of all nav steps (up to 8 visible at once)
+- **Safety badge** — SAFE (green) / UNSAFE (orange) from the Safety Evaluator
+- **Hazards** — top 3 hazards from safety report
+- **Controls footer** — key hints (`P` close, `←/→` step, `Enter` speak step)
+
+> All rendering is pure OpenCV (no GUI libs), matching the existing panel style.
+
+---
+
+### Core — Floorplan Manager
+
+#### [MODIFY] [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py)
+
+Add a `FloorplanManager` inner class / object on [Application](file:///c:/Tim/AIDGPT/AidGPT/main.py#72-1155) with:
+
+| Method | Description |
+|---|---|
+| [load(image_path, start, dest)](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/cli.py#30-46) | Kicks off [run_pipeline(...)](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/orchestrator.py#106-448) in a daemon thread; sets `state.floorplan_running=True` |
+| `_pipeline_worker(...)` | Background thread: calls `orchestrator.run_pipeline`, writes result to `state.floorplan_result`, sets status to `done` or `error` |
+| `next_step() / prev_step()` | Advance `state.floorplan_nav_index` |
+| `get_current_step()` | Returns current `NavStep` |
+
+Wiring points in [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py):
+1. **[initialize_components](file:///c:/Tim/AIDGPT/AidGPT/main.py#202-280)** — instantiate `FloorplanManager`
+2. **[_prepare_display_frame](file:///c:/Tim/AIDGPT/AidGPT/main.py#491-602)** — when `state.floorplan_mode`, composite floorplan panel on the right
+3. **[_resize_window_for_side_by_side](file:///c:/Tim/AIDGPT/AidGPT/main.py#654-682)** — add case for floorplan mode
+4. **[_on_inference_complete](file:///c:/Tim/AIDGPT/AidGPT/main.py#334-378)** — if floorplan done AND floorplan has current step, prepend that step's `action` text to `state.last_navigation_text` so the existing nav panel + TTS surfaces it automatically
+
+---
+
+### UI — Input Handler
+
+#### [MODIFY] [input_handler.py](file:///c:/Tim/AIDGPT/AidGPT/ui/input_handler.py)
+
+Add key bindings:
+| Key | Action |
+|---|---|
+| `P` | Toggle `state.floorplan_mode` |
+| `←` (left arrow = 81) | `floorplan_manager.prev_step()` when floorplan active |
+| `→` (right arrow = 83) | `floorplan_manager.next_step()` when floorplan active |
+| `Enter` | Speak current floorplan nav step aloud if floorplan active |
+
+> [handle_keyboard](file:///c:/Tim/AIDGPT/AidGPT/ui/input_handler.py#37-169) will receive `floorplan_manager` as an optional kwarg (same pattern as `detection_engine`).
+
+---
+
+### Startup Integration (argument + launch helper)
+
+#### [MODIFY] [core/args.py](file:///c:/Tim/AIDGPT/AidGPT/core/args.py)
+
+Add optional CLI args:
+```
+--floorplan-image  PATH    Floor-plan image to load at startup
+--floorplan-start  ROOM    Starting room name
+--floorplan-dest   ROOM    Destination room name
+```
+
+If all three are provided at startup, `FloorplanManager.load(...)` is called automatically after initialization.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Two UX decisions need your input before I code this up:**
+>
+> 1. **Startup vs on-demand loading** — Should the floorplan pipeline auto-run when `--floorplan-image` args are provided, or should the user always press `P` first (and then a sub-dialog/path is needed)? I plan to *auto-run on startup if args are given, and show an "idle, press Enter to load" prompt otherwise*.
+>
+> 2. **Key for floorplan toggle** — `P` is currently unused. Does `P` work for you, or would you prefer a different key? (Current used keys: q, p-pause, d, m, b, g, t, v, s, k, j, o, u, l, h, y, a, n, f, c)
+>
+> Wait — `p` = pause. I'll use `Ctrl+P` or reassign. Suggest: **`[`** (open bracket) — easy to press. Alternatively, accept the user's preference.
+
+> [!NOTE]
+> The floorplan pipeline makes LLM calls (OpenAI / Claude) and takes **10–60 seconds**. The app stays fully responsive during this time (background thread). The panel shows an animated spinner while waiting.
+
+---
+
+## Verification Plan
+
+### Automated (import smoke test)
+```bash
+cd c:\Tim\AIDGPT\AidGPT
+python -c "from ui.floorplan_panel import render_floorplan_panel; import numpy as np; p = render_floorplan_panel(720, None); print(p.shape)"
+```
+Expected: prints [(720, 400, 3)](file:///c:/Tim/AIDGPT/AidGPT/main.py#965-1102) with no errors.
+
+### Automated (state field check)
+```bash
+cd c:\Tim\AIDGPT\AidGPT
+python -c "from core.application_state import ApplicationState; s = ApplicationState(); print(s.floorplan_mode, s.floorplan_status)"
+```
+Expected: prints `False idle`.
+
+### Manual — Obstacle detection unaffected
+1. `python main.py` (no extra args)
+2. Verify detection boxes, depth map (M), nav panel (N) all work as before.
+3. Press `[` — panel should appear with "IDLE — no floorplan loaded" message.
+4. Press `[` again — panel disappears.
+
+### Manual — Full floorplan pipeline
+1. Have a floorplan image ready, e.g. [C:\Tim\AIDGPT\AidGPT\alt\dataset\floorplan\images\MP-860-3L.png](file:///Tim/AIDGPT/AidGPT/alt/dataset/floorplan/images/MP-860-3L.png)
+2. `python main.py --floorplan-image "C:\Tim\AIDGPT\AidGPT\alt\dataset\floorplan\images\MP-860-3L.png" --floorplan-start "Hall" --floorplan-dest "Kitchen"`
+3. The floorplan panel should appear automatically showing **RUNNING** with a spinner.
+4. After ~30s the panel updates to **DONE**, shows nav steps, route, and safety status.
+5. Press `→` to advance steps; check the nav panel (N) shows the step text.
+6. Press `Enter` to hear the current step spoken via TTS.

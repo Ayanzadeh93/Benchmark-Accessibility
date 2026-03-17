@@ -1,0 +1,95 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001134.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:46:33.869149",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "fire alarm",
+    "text",
+    "university walk tour",
+    "hallway",
+    "door",
+    "pipe",
+    "board",
+    "poster",
+    "notice board",
+    "cable",
+    "window",
+    "electrical outlet",
+    "handrail"
+  ],
+  "num_detections": 1,
+  "detections": [
+    {
+      "class_id": 13,
+      "class_name": "handrail",
+      "confidence": 0.4602145254611969,
+      "x_center": 0.9449545224507649,
+      "y_center": 0.850452310067636,
+      "width": 0.10518754323323568,
+      "height": 0.1136922765661169,
+      "bbox_xyxy": [
+        1713.3326416015625,
+        857.0946655273438,
+        1915.292724609375,
+        979.88232421875
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001134.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "hallway",
+        "door",
+        "light",
+        "ceiling",
+        "pipe",
+        "wall",
+        "floor",
+        "board",
+        "poster",
+        "notice board",
+        "exit sign",
+        "fire alarm",
+        "cable",
+        "window",
+        "lamp",
+        "electrical outlet",
+        "handrail",
+        "text",
+        "university walk tour"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "fire alarm",
+          "text",
+          "university walk tour"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [],
+        "technology": [],
+        "other": []
+      },
+      "scene_description": "A long, dimly lit hallway with exposed ceiling pipes and fluorescent lights, featuring doors on both sides and a polished floor.",
+      "primary_focus": "hallway",
+      "num_objects": 19,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:46:32.597536"
+    }
+  }
+}

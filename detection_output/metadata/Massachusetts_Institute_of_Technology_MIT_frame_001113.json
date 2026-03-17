@@ -1,0 +1,178 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001113.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:39:31.113498",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "sign",
+    "person",
+    "cabinet",
+    "door",
+    "window",
+    "pipe",
+    "fire alarm",
+    "cleaning cart",
+    "electrical outlet",
+    "shutter",
+    "label",
+    "text",
+    "trolley",
+    "ladder",
+    "frame",
+    "board",
+    "hallway",
+    "stairs"
+  ],
+  "num_detections": 4,
+  "detections": [
+    {
+      "class_id": 8,
+      "class_name": "cleaning cart",
+      "confidence": 0.7667405009269714,
+      "x_center": 0.5911025365193685,
+      "y_center": 0.7591268468786169,
+      "width": 0.045478566487630205,
+      "height": 0.12519599066840278,
+      "bbox_xyxy": [
+        1091.2574462890625,
+        752.2511596679688,
+        1178.5762939453125,
+        887.4628295898438
+      ]
+    },
+    {
+      "class_id": 13,
+      "class_name": "trolley",
+      "confidence": 0.736096203327179,
+      "x_center": 0.5924726486206054,
+      "y_center": 0.7606060451931423,
+      "width": 0.04195467631022135,
+      "height": 0.11479503490306713,
+      "bbox_xyxy": [
+        1097.27099609375,
+        759.4652099609375,
+        1177.823974609375,
+        883.44384765625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 2,
+      "class_name": "person",
+      "confidence": 0.5270019769668579,
+      "x_center": 0.5934324264526367,
+      "y_center": 0.6827540362322772,
+      "width": 0.024837748209635416,
+      "height": 0.057167279278790506,
+      "bbox_xyxy": [
+        1115.5460205078125,
+        706.5040283203125,
+        1163.2344970703125,
+        768.2446899414062
+      ]
+    },
+    {
+      "class_id": 10,
+      "class_name": "shutter",
+      "confidence": 0.4726114869117737,
+      "x_center": 0.31248127619425453,
+      "y_center": 0.6308354695638021,
+      "width": 0.05683701833089193,
+      "height": 0.19439640751591436,
+      "bbox_xyxy": [
+        545.4005126953125,
+        576.3282470703125,
+        654.527587890625,
+        786.2763671875
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001113.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "window",
+        "light",
+        "ceiling",
+        "pipe",
+        "exit sign",
+        "fire alarm",
+        "cleaning cart",
+        "person",
+        "floor",
+        "wall",
+        "electrical outlet",
+        "cabinet",
+        "shutter",
+        "label",
+        "text",
+        "trolley",
+        "ladder",
+        "lamp",
+        "frame",
+        "board",
+        "sign",
+        "building",
+        "hallway",
+        "stairs",
+        "exit"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "sign",
+          "exit"
+        ],
+        "accessibility": [],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "door",
+          "window",
+          "light",
+          "ceiling",
+          "pipe",
+          "fire alarm",
+          "cleaning cart",
+          "floor",
+          "wall",
+          "electrical outlet",
+          "shutter",
+          "label",
+          "text",
+          "trolley",
+          "ladder",
+          "lamp",
+          "frame",
+          "board",
+          "building",
+          "hallway",
+          "stairs"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 26,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:39:29.967557"
+    }
+  }
+}

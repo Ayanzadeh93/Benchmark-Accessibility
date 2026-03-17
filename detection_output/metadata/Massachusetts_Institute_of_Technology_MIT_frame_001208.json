@@ -1,0 +1,109 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001208.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:15:19.945399",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "rle",
+    "door",
+    "window",
+    "pipe",
+    "hallway",
+    "sign",
+    "vent",
+    "university walk tour"
+  ],
+  "num_detections": 3,
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "door",
+      "confidence": 0.5885084867477417,
+      "x_center": 0.47382572491963704,
+      "y_center": 0.7405472366898148,
+      "width": 0.05211865107218425,
+      "height": 0.5132197627314815,
+      "bbox_xyxy": [
+        859.7114868164062,
+        522.65234375,
+        959.779296875,
+        1076.9296875
+      ]
+    },
+    {
+      "class_id": 1,
+      "class_name": "door",
+      "confidence": 0.553901731967926,
+      "x_center": 0.7026901880900065,
+      "y_center": 0.7324106145788122,
+      "width": 0.05538444519042969,
+      "height": 0.531026119656033,
+      "bbox_xyxy": [
+        1295.99609375,
+        504.2493591308594,
+        1402.334228515625,
+        1077.757568359375
+      ]
+    },
+    {
+      "class_id": 7,
+      "class_name": "university walk tour",
+      "confidence": 0.48757120966911316,
+      "x_center": 0.499242827296257,
+      "y_center": 0.5003097918298509,
+      "width": 0.9806822836399078,
+      "height": 0.9773535066180759,
+      "bbox_xyxy": [
+        17.091236114501953,
+        12.563681602478027,
+        1900.001220703125,
+        1068.10546875
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001208.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "window",
+        "ceiling",
+        "light",
+        "pipe",
+        "wall",
+        "floor",
+        "hallway",
+        "sign",
+        "vent",
+        "rle",
+        "university walk tour"
+      ],
+      "categories": {
+        "signs": [
+          "rle"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [],
+        "technology": [],
+        "other": []
+      },
+      "scene_description": "A long hallway with glass walls on both sides, leading into a building. The floor has a reflective surface, and there are red pipes running along the ceiling.",
+      "primary_focus": "hallway",
+      "num_objects": 12,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:15:18.759818"
+    }
+  }
+}

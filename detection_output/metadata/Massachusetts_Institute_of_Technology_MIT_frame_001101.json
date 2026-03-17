@@ -1,0 +1,213 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001101.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:33:55.193440",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "person",
+    "security camera",
+    "cabinet",
+    "door",
+    "staircase",
+    "hallway",
+    "number 2",
+    "poster",
+    "fire alarm",
+    "light fixture",
+    "stairs",
+    "handrail",
+    "board",
+    "window",
+    "text",
+    "label",
+    "frame",
+    "bulletin board",
+    "door handle"
+  ],
+  "num_detections": 6,
+  "detections": [
+    {
+      "class_id": 12,
+      "class_name": "handrail",
+      "confidence": 0.622846245765686,
+      "x_center": 0.5990145365397136,
+      "y_center": 0.6617527431911893,
+      "width": 0.12941207885742187,
+      "height": 0.13260175916883682,
+      "bbox_xyxy": [
+        1025.872314453125,
+        643.0880126953125,
+        1274.343505859375,
+        786.2979125976562
+      ]
+    },
+    {
+      "class_id": 4,
+      "class_name": "door",
+      "confidence": 0.5797387957572937,
+      "x_center": 0.24396924177805582,
+      "y_center": 0.6596080214888961,
+      "width": 0.11485629081726074,
+      "height": 0.4540614092791522,
+      "bbox_xyxy": [
+        358.1589050292969,
+        467.1835021972656,
+        578.6829833984375,
+        957.56982421875
+      ]
+    },
+    {
+      "class_id": 8,
+      "class_name": "poster",
+      "confidence": 0.5486630201339722,
+      "x_center": 0.8299865086873373,
+      "y_center": 0.43335917437518084,
+      "width": 0.33052266438802086,
+      "height": 0.7861377574779369,
+      "bbox_xyxy": [
+        1276.2723388671875,
+        43.513519287109375,
+        1910.8758544921875,
+        892.5422973632812
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "staircase",
+      "confidence": 0.5036826133728027,
+      "x_center": 0.5966546535491943,
+      "y_center": 0.8095280682599103,
+      "width": 0.15066372553507487,
+      "height": 0.28600819905598956,
+      "bbox_xyxy": [
+        1000.9397583007812,
+        719.8458862304688,
+        1290.214111328125,
+        1028.7347412109375
+      ]
+    },
+    {
+      "class_id": 1,
+      "class_name": "person",
+      "confidence": 0.460300475358963,
+      "x_center": 0.33738659222920736,
+      "y_center": 0.7082608540852865,
+      "width": 0.01526021957397461,
+      "height": 0.05615104392722801,
+      "bbox_xyxy": [
+        633.1324462890625,
+        734.6001586914062,
+        662.4320678710938,
+        795.2432861328125
+      ]
+    },
+    {
+      "class_id": 15,
+      "class_name": "text",
+      "confidence": 0.458453506231308,
+      "x_center": 0.052801443139712016,
+      "y_center": 0.9523632473415798,
+      "width": 0.07068295280138652,
+      "height": 0.060512401439525465,
+      "bbox_xyxy": [
+        33.523136138916016,
+        995.8756103515625,
+        169.23440551757812,
+        1061.22900390625
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001101.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "staircase",
+        "hallway",
+        "exit sign",
+        "number 2",
+        "poster",
+        "fire alarm",
+        "light fixture",
+        "ceiling",
+        "wall",
+        "floor",
+        "stairs",
+        "handrail",
+        "board",
+        "window",
+        "person",
+        "text",
+        "label",
+        "frame",
+        "bulletin board",
+        "door handle",
+        "lamp",
+        "cabinet",
+        "building",
+        "electrical outlet",
+        "security camera",
+        "fire extinguisher",
+        "fire door"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign"
+        ],
+        "accessibility": [],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [
+          "security camera"
+        ],
+        "other": [
+          "door",
+          "staircase",
+          "hallway",
+          "number 2",
+          "poster",
+          "fire alarm",
+          "light fixture",
+          "ceiling",
+          "wall",
+          "floor",
+          "stairs",
+          "handrail",
+          "board",
+          "window",
+          "text",
+          "label",
+          "frame",
+          "bulletin board",
+          "door handle",
+          "lamp",
+          "building",
+          "electrical outlet",
+          "fire extinguisher",
+          "fire door"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 28,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:33:53.604635"
+    }
+  }
+}

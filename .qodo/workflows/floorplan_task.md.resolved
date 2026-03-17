@@ -1,0 +1,28 @@
+# Integration Task: Floorplan + Obstacle Detection
+
+## Planning
+- [x] Explore main.py structure and existing UI
+- [x] Explore floorparsing Agentic pipeline ([orchestrator.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/orchestrator.py), [navigation.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/navigation.py))
+- [x] Examine UI panels ([navigation_panel.py](file:///c:/Tim/AIDGPT/AidGPT/ui/navigation_panel.py), [input_handler.py](file:///c:/Tim/AIDGPT/AidGPT/ui/input_handler.py))
+- [x] Read [ApplicationState](file:///c:/Tim/AIDGPT/AidGPT/core/application_state.py#14-203) to understand state management
+- [ ] Write implementation plan and get approval
+
+## Execution — ApplicationState
+- [ ] Add floorplan state fields to [application_state.py](file:///c:/Tim/AIDGPT/AidGPT/core/application_state.py)
+
+## Execution — UI: Floorplan Panel
+- [ ] Create `ui/floorplan_panel.py` — rich side panel showing parsed floorplan map, nav steps, safety status
+
+## Execution — Floorplan Integration in [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py)
+- [ ] Add floorplan integration imports & toggle ('P' key)
+- [ ] Add `FloorplanManager` class to [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py) to run the pipeline in a background thread
+- [ ] Wire up the keyboard toggle in [input_handler.py](file:///c:/Tim/AIDGPT/AidGPT/ui/input_handler.py)
+- [ ] Wire the panel into [_prepare_display_frame](file:///c:/Tim/AIDGPT/AidGPT/main.py#491-602) and [_resize_window_for_side_by_side](file:///c:/Tim/AIDGPT/AidGPT/main.py#654-682)
+
+## Execution — Navigation Response for Obstacle System
+- [ ] Wire floorplan nav steps to be fed into the existing navigation panel (the `last_navigation_text` field)
+
+## Verification
+- [ ] Smoke-test the app launches without import errors
+- [ ] Test 'P' key toggles the floorplan panel on/off
+- [ ] Test that existing functionality (depth, detections, etc.) is unaffected

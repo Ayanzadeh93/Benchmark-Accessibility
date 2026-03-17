@@ -1,0 +1,318 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001137.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:47:53.288237",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "sign",
+    "security camera",
+    "fire extinguisher cabinet",
+    "door",
+    "window",
+    "pipe",
+    "board",
+    "bulletin board",
+    "poster",
+    "text",
+    "cable",
+    "electrical outlet",
+    "frame",
+    "door handle",
+    "door frame",
+    "window blind",
+    "light fixture",
+    "wall panel",
+    "wall-mounted box"
+  ],
+  "num_detections": 10,
+  "detections": [
+    {
+      "class_id": 18,
+      "class_name": "wall panel",
+      "confidence": 0.7557359933853149,
+      "x_center": 0.3717206478118896,
+      "y_center": 0.7090793750904224,
+      "width": 0.04797563552856445,
+      "height": 0.23817986382378473,
+      "bbox_xyxy": [
+        667.6470336914062,
+        637.1885986328125,
+        759.76025390625,
+        894.4228515625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 13,
+      "class_name": "frame",
+      "confidence": 0.5751448273658752,
+      "x_center": 0.41924033164978025,
+      "y_center": 0.6211796513310185,
+      "width": 0.030188846588134765,
+      "height": 0.08834929289641204,
+      "bbox_xyxy": [
+        775.9601440429688,
+        623.1654052734375,
+        833.9227294921875,
+        718.5826416015625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 10,
+      "class_name": "text",
+      "confidence": 0.5546531677246094,
+      "x_center": 0.0535535474618276,
+      "y_center": 0.9521068996853299,
+      "width": 0.0704058845837911,
+      "height": 0.061869190357349536,
+      "bbox_xyxy": [
+        35.23316192626953,
+        994.8660888671875,
+        170.41246032714844,
+        1061.684814453125
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "window",
+      "confidence": 0.5497053265571594,
+      "x_center": 0.23326059977213542,
+      "y_center": 0.5252494388156467,
+      "width": 0.14086405436197916,
+      "height": 0.46552522447374134,
+      "bbox_xyxy": [
+        312.630859375,
+        315.8857727050781,
+        583.08984375,
+        818.6530151367188
+      ]
+    },
+    {
+      "class_id": 13,
+      "class_name": "frame",
+      "confidence": 0.5458841323852539,
+      "x_center": 0.5550255457560221,
+      "y_center": 0.664461573848018,
+      "width": 0.03227157592773437,
+      "height": 0.18372017189308448,
+      "bbox_xyxy": [
+        1034.6683349609375,
+        618.4096069335938,
+        1096.6297607421875,
+        816.827392578125
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 16,
+      "class_name": "window blind",
+      "confidence": 0.49193406105041504,
+      "x_center": 0.23249465624491375,
+      "y_center": 0.5247919577139395,
+      "width": 0.13704264958699544,
+      "height": 0.45616186636465567,
+      "bbox_xyxy": [
+        314.82879638671875,
+        320.4479064941406,
+        577.95068359375,
+        813.1027221679688
+      ]
+    },
+    {
+      "class_id": 18,
+      "class_name": "wall panel",
+      "confidence": 0.48444864153862,
+      "x_center": 0.4710063934326172,
+      "y_center": 0.6280099939416957,
+      "width": 0.047383880615234374,
+      "height": 0.1835002757884838,
+      "bbox_xyxy": [
+        858.84375,
+        579.16064453125,
+        949.82080078125,
+        777.3409423828125
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 14,
+      "class_name": "door handle",
+      "confidence": 0.47772377729415894,
+      "x_center": 0.1627601703008016,
+      "y_center": 0.8317003885904948,
+      "width": 0.04607898394266764,
+      "height": 0.11220132333260996,
+      "bbox_xyxy": [
+        268.2637023925781,
+        837.647705078125,
+        356.7353515625,
+        958.8251342773438
+      ]
+    },
+    {
+      "class_id": 3,
+      "class_name": "fire extinguisher cabinet",
+      "confidence": 0.46429669857025146,
+      "x_center": 0.37112253506978354,
+      "y_center": 0.7082537898310909,
+      "width": 0.052257696787516274,
+      "height": 0.24451209174262153,
+      "bbox_xyxy": [
+        662.3878784179688,
+        632.8775634765625,
+        762.72265625,
+        896.9506225585938
+      ]
+    },
+    {
+      "class_id": 8,
+      "class_name": "bulletin board",
+      "confidence": 0.45150741934776306,
+      "x_center": 0.8559751510620117,
+      "y_center": 0.586762958102756,
+      "width": 0.13576189676920572,
+      "height": 0.5156964054814092,
+      "bbox_xyxy": [
+        1513.140869140625,
+        355.2279357910156,
+        1773.8037109375,
+        912.1800537109375
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001137.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "window",
+        "light",
+        "ceiling",
+        "pipe",
+        "floor",
+        "wall",
+        "board",
+        "bulletin board",
+        "fire extinguisher cabinet",
+        "poster",
+        "exit sign",
+        "text",
+        "cable",
+        "electrical outlet",
+        "lamp",
+        "frame",
+        "security camera",
+        "sign",
+        "door handle",
+        "door frame",
+        "window blind",
+        "light fixture",
+        "lighting",
+        "wall panel",
+        "wall-mounted box",
+        "notice",
+        "paper",
+        "postcard",
+        "announcement",
+        "information board",
+        "whiteboard",
+        "black door",
+        "orange bulletin board",
+        "red poster",
+        "blue poster",
+        "yellow poster",
+        "green poster",
+        "white poster",
+        "brown poster",
+        "gray poster",
+        "white wall",
+        "black wall",
+        "white ceiling",
+        "white floor",
+        "white pipe",
+        "white cable",
+        "white electrical outlet",
+        "white light"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "sign"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [
+          "fire extinguisher cabinet"
+        ],
+        "technology": [
+          "security camera"
+        ],
+        "other": [
+          "door",
+          "window",
+          "light",
+          "ceiling",
+          "pipe",
+          "floor",
+          "wall",
+          "board",
+          "bulletin board",
+          "poster",
+          "text",
+          "cable",
+          "electrical outlet",
+          "lamp",
+          "frame",
+          "door handle",
+          "door frame",
+          "window blind",
+          "light fixture",
+          "lighting",
+          "wall panel",
+          "wall-mounted box",
+          "notice",
+          "paper",
+          "postcard",
+          "announcement",
+          "information board",
+          "whiteboard",
+          "black door",
+          "orange bulletin board",
+          "red poster",
+          "blue poster",
+          "yellow poster",
+          "green poster",
+          "white poster",
+          "brown poster",
+          "gray poster",
+          "white wall",
+          "black wall",
+          "white ceiling",
+          "white floor",
+          "white pipe",
+          "white cable",
+          "white electrical outlet",
+          "white light"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 49,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:47:51.991076"
+    }
+  }
+}

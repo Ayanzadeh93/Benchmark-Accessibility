@@ -1,0 +1,113 @@
+# Floorplan + Obstacle Detection Integration — Walkthrough
+
+## What Was Done
+
+Two independently finished subsystems are now **fully integrated** into the single AidGPT application:
+
+1. **Obstacle Detection** (always active, unchanged) — `EnhancedObstacleDetector`, `DFPN`, `ObstacleRiskEngine`  
+2. **Floorplan Parsing / Agentic-RAG** (new, on-demand) — 5-agent pipeline run in background thread, panel shown beside the camera feed
+
+---
+
+## Files Changed
+
+| File | Change |
+|---|---|
+| [application_state.py](file:///c:/Tim/AIDGPT/AidGPT/core/application_state.py) | Added 9 `floorplan_*` state fields |
+| [args.py](file:///c:/Tim/AIDGPT/AidGPT/core/args.py) | Added `--floorplan-image`, `--floorplan-start`, `--floorplan-dest`, `--floorplan-provider` CLI args |
+| [ui/floorplan_panel.py](file:///c:/Tim/AIDGPT/AidGPT/ui/floorplan_panel.py) | **NEW** — 420-px rich side panel (pure OpenCV) |
+| [main.py](file:///c:/Tim/AIDGPT/AidGPT/main.py) | [FloorplanManager](file:///c:/Tim/AIDGPT/AidGPT/main.py#78-213) class, wiring in init/display/TTS/window |
+| [ui/input_handler.py](file:///c:/Tim/AIDGPT/AidGPT/ui/input_handler.py) | `[` toggle, `←/→` steps, `Enter` speak |
+
+---
+
+## Architecture
+
+```mermaid
+graph LR
+    Camera["📷 Camera Feed"] --> Detection["Obstacle Detection\n(always-on)"]
+    Detection --> Risk["RiskEngine + DFPN"]
+    Risk --> NavPanel["Navigation Panel (N)"]
+
+    CLI["--floorplan-image\n--floorplan-start\n--floorplan-dest"] --> FPM
+    KeyPress["[ key"] --> FPM["FloorplanManager\nbackground thread"]
+    FPM --> Pipeline["5-Agent Pipeline\nParser→Graph→Critic→Planner→Safety"]
+    Pipeline --> State["ApplicationState\nfloorplan_result"]
+    State --> FPPanel["Floorplan Panel (420px)"]
+    State --> NavPanel
+    FPPanel --> Display["Main Feed Window"]
+    NavPanel --> Display
+```
+
+---
+
+## How to Use
+
+### Option A — Auto-load at startup
+```bash
+cd c:\Tim\AIDGPT\AidGPT
+python main.py --floorplan-image "alt\dataset\floorplan\images\MP-860-3L.png" ^
+               --floorplan-start "Hall" ^
+               --floorplan-dest "Kitchen" ^
+               --floorplan-provider openai
+```
+The panel opens immediately showing **RUNNING**, then switches to **DONE ✓** with all nav steps when the pipeline finishes (~30–60s).
+
+### Option B — Toggle panel during live session
+Press **`[`** at any time. The panel shows `IDLE — no floorplan loaded` until you restart with the CLI args above.
+
+### Keyboard shortcuts (when panel is visible)
+| Key | Action |
+|---|---|
+| `[` | Open / close the floorplan panel |
+| `→` | Advance to next navigation step (also spoken aloud) |
+| `←` | Go back to previous step |
+| `Enter` | Speak the current step at CRITICAL priority |
+| `N` | Toggle the obstacle navigation panel (unchanged) |
+
+---
+
+## What the Floorplan Panel Shows
+
+- **Status badge** — `IDLE` / `RUNNING ⟳` (animated) / `DONE ✓` / `ERROR`
+- **Route banner** — "Hall → Kitchen · 12 nodes · 18 edges"
+- **Safety badge** — `SAFE (0 hazards)` in green or `UNSAFE (2 hazards)` in orange
+- **Current Step card** — action, sensory feedback, heading
+- **Step list** — scrollable numbered list, current step highlighted
+- **Hazards** — top 3 from safety report
+- **Key hints footer**
+
+---
+
+## Validation Results
+
+```
+1. Testing floorplan_panel import...
+   OK: panel shape = (720, 420, 3)
+
+2. Testing ApplicationState floorplan fields...
+   OK: floorplan_mode=False, floorplan_status=idle
+
+3. main.py AST parse...
+   OK — no syntax errors
+   Classes defined: [FloorplanManager, Application]
+   OK: FloorplanManager and Application both present
+
+ALL VERIFICATION CHECKS PASSED!
+```
+
+---
+
+## How the Two Systems Talk to Each Other
+
+Every 5-second inference cycle, [_on_inference_complete](file:///c:/Tim/AIDGPT/AidGPT/main.py#498-556) checks if a floorplan result is available. If yes, the **current nav step text** is prepended to `last_navigation_text`:
+
+```
+[Floorplan] Turn left. Walk 3 steps forward. You should feel the hallway opening. Turn right at the door frame.
+```
+
+This combined string is:
+- Shown in the **Navigation Panel** (press `N`)  
+- Spoken by the **TTS engine** automatically
+
+The obstacle system continues to provide real-time danger alerts independently on top of this.

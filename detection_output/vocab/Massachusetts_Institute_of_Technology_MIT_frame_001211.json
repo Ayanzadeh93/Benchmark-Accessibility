@@ -1,0 +1,28 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001211.jpg",
+  "timestamp": "2026-01-23T13:16:42.272513",
+  "vlm_model": "qwen",
+  "used_vlm_json": null,
+  "classes": [
+    "sign",
+    "exit sign",
+    "monitor",
+    "security camera",
+    "cabinet",
+    "door",
+    "hallway",
+    "pipe",
+    "board",
+    "bulletin board",
+    "fire extinguisher",
+    "ladder",
+    "rle at mit",
+    "university walk tour",
+    "metallic container",
+    "window",
+    "frame",
+    "electrical outlet",
+    "hose",
+    "trolley"
+  ]
+}

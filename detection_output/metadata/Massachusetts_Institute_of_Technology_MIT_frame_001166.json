@@ -1,0 +1,229 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001166.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:58:46.368651",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "ramp",
+    "person",
+    "table",
+    "cabinet",
+    "staircase",
+    "door",
+    "backpack",
+    "handrail",
+    "window",
+    "fire extinguisher",
+    "pipe",
+    "ladder",
+    "stairs",
+    "label",
+    "text",
+    "entrance",
+    "frame",
+    "glass",
+    "metal"
+  ],
+  "num_detections": 5,
+  "detections": [
+    {
+      "class_id": 2,
+      "class_name": "person",
+      "confidence": 0.925636351108551,
+      "x_center": 0.7380936622619629,
+      "y_center": 0.7839261372884114,
+      "width": 0.1287527084350586,
+      "height": 0.42983856201171877,
+      "bbox_xyxy": [
+        1293.5372314453125,
+        614.5274047851562,
+        1540.742431640625,
+        1078.7530517578125
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 7,
+      "class_name": "backpack",
+      "confidence": 0.8349021673202515,
+      "x_center": 0.7103295962015788,
+      "y_center": 0.7172395494249132,
+      "width": 0.07853628794352213,
+      "height": 0.17727062084056713,
+      "bbox_xyxy": [
+        1288.43798828125,
+        678.892578125,
+        1439.2276611328125,
+        870.3448486328125
+      ]
+    },
+    {
+      "class_id": 9,
+      "class_name": "window",
+      "confidence": 0.5953296422958374,
+      "x_center": 0.7321246465047201,
+      "y_center": 0.7851658291286893,
+      "width": 0.17103792826334635,
+      "height": 0.3907575254087095,
+      "bbox_xyxy": [
+        1241.48291015625,
+        636.9700317382812,
+        1569.875732421875,
+        1058.9881591796875
+      ]
+    },
+    {
+      "class_id": 6,
+      "class_name": "door",
+      "confidence": 0.5898589491844177,
+      "x_center": 0.24606159528096516,
+      "y_center": 0.6237587822808159,
+      "width": 0.13296874364217123,
+      "height": 0.7115029794198495,
+      "bbox_xyxy": [
+        344.78826904296875,
+        289.4478759765625,
+        600.0882568359375,
+        1057.87109375
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "staircase",
+      "confidence": 0.4522421956062317,
+      "x_center": 0.4508718331654867,
+      "y_center": 0.7760835435655382,
+      "width": 0.32092250188191734,
+      "height": 0.444576574254919,
+      "bbox_xyxy": [
+        557.5883178710938,
+        598.098876953125,
+        1173.759521484375,
+        1078.2415771484375
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001166.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "staircase",
+        "door",
+        "backpack",
+        "handrail",
+        "window",
+        "exit sign",
+        "person",
+        "fire extinguisher",
+        "light",
+        "ceiling",
+        "pipe",
+        "wall",
+        "floor",
+        "table",
+        "ladder",
+        "stairs",
+        "ramp",
+        "cabinet",
+        "label",
+        "text",
+        "building",
+        "entrance",
+        "exit",
+        "lamp",
+        "frame",
+        "glass",
+        "metal",
+        "wood",
+        "blackboard",
+        "whiteboard",
+        "door handle",
+        "hinge",
+        "door frame",
+        "door knob",
+        "door lock",
+        "door hinge",
+        "door stop",
+        "door latch",
+        "door sill",
+        "door threshold",
+        "door edge",
+        "door panel",
+        "door trim"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "exit"
+        ],
+        "accessibility": [
+          "ramp"
+        ],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "table",
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "staircase",
+          "door",
+          "backpack",
+          "handrail",
+          "window",
+          "fire extinguisher",
+          "light",
+          "ceiling",
+          "pipe",
+          "wall",
+          "floor",
+          "ladder",
+          "stairs",
+          "label",
+          "text",
+          "building",
+          "entrance",
+          "lamp",
+          "frame",
+          "glass",
+          "metal",
+          "wood",
+          "blackboard",
+          "whiteboard",
+          "door handle",
+          "hinge",
+          "door frame",
+          "door knob",
+          "door lock",
+          "door hinge",
+          "door stop",
+          "door latch",
+          "door sill",
+          "door threshold",
+          "door edge",
+          "door panel",
+          "door trim"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 43,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:58:45.165712"
+    }
+  }
+}

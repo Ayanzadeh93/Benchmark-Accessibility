@@ -1,0 +1,171 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001194.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:08:41.581464",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "monitor",
+    "cabinet",
+    "window",
+    "door",
+    "vent",
+    "bulletin board",
+    "poster",
+    "electrical outlet",
+    "radiator",
+    "air conditioner",
+    "fire alarm",
+    "frame",
+    "text",
+    "board",
+    "paper",
+    "picture",
+    "card",
+    "display",
+    "information sign"
+  ],
+  "num_detections": 3,
+  "detections": [
+    {
+      "class_id": 3,
+      "class_name": "window",
+      "confidence": 0.6903297305107117,
+      "x_center": 0.03593427973488967,
+      "y_center": 0.6527739772090205,
+      "width": 0.07116810803612074,
+      "height": 0.6489659344708478,
+      "bbox_xyxy": [
+        0.6724333763122559,
+        354.5542907714844,
+        137.31520080566406,
+        1055.4375
+      ]
+    },
+    {
+      "class_id": 4,
+      "class_name": "door",
+      "confidence": 0.5307373404502869,
+      "x_center": 0.30468406677246096,
+      "y_center": 0.7118896201804832,
+      "width": 0.03690547943115234,
+      "height": 0.3944925378870081,
+      "bbox_xyxy": [
+        549.5641479492188,
+        555.8148193359375,
+        620.4226684570312,
+        981.8667602539062
+      ]
+    },
+    {
+      "class_id": 0,
+      "class_name": "exit sign",
+      "confidence": 0.47525230050086975,
+      "x_center": 0.27865893046061196,
+      "y_center": 0.35492834868254486,
+      "width": 0.06562182108561197,
+      "height": 0.07276551988389757,
+      "bbox_xyxy": [
+        472.0281982421875,
+        344.02923583984375,
+        598.0220947265625,
+        422.6159973144531
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001194.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "exit sign",
+        "window",
+        "door",
+        "ceiling",
+        "vent",
+        "light",
+        "bulletin board",
+        "poster",
+        "floor",
+        "wall",
+        "electrical outlet",
+        "radiator",
+        "air conditioner",
+        "fire alarm",
+        "monitor",
+        "cabinet",
+        "frame",
+        "text",
+        "board",
+        "paper",
+        "picture",
+        "card",
+        "display",
+        "information board",
+        "announcement",
+        "notice",
+        "calendar",
+        "whiteboard",
+        "blackboard",
+        "image"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [
+          "monitor"
+        ],
+        "other": [
+          "window",
+          "door",
+          "ceiling",
+          "vent",
+          "light",
+          "bulletin board",
+          "poster",
+          "floor",
+          "wall",
+          "electrical outlet",
+          "radiator",
+          "air conditioner",
+          "fire alarm",
+          "frame",
+          "text",
+          "board",
+          "paper",
+          "picture",
+          "card",
+          "display",
+          "information board",
+          "announcement",
+          "notice",
+          "calendar",
+          "whiteboard",
+          "blackboard",
+          "image"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 30,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:08:40.321470"
+    }
+  }
+}

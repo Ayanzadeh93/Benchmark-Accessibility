@@ -1,0 +1,183 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001103.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:35:33.571685",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "number sign",
+    "person",
+    "cabinet",
+    "door",
+    "staircase",
+    "window",
+    "fire alarm",
+    "handrail",
+    "stairs",
+    "ladder",
+    "fire extinguisher",
+    "text",
+    "hallway",
+    "entrance",
+    "doorframe"
+  ],
+  "num_detections": 5,
+  "detections": [
+    {
+      "class_id": 6,
+      "class_name": "window",
+      "confidence": 0.7546190023422241,
+      "x_center": 0.04102853971223037,
+      "y_center": 0.39603148478048816,
+      "width": 0.08132122283180555,
+      "height": 0.7568915208180745,
+      "bbox_xyxy": [
+        0.7064223289489746,
+        18.992582321166992,
+        156.84317016601562,
+        836.4354248046875
+      ]
+    },
+    {
+      "class_id": 4,
+      "class_name": "door",
+      "confidence": 0.5177799463272095,
+      "x_center": 0.22963326772054035,
+      "y_center": 0.6478861632170501,
+      "width": 0.157777468363444,
+      "height": 0.6205751489709925,
+      "bbox_xyxy": [
+        289.42950439453125,
+        364.6064758300781,
+        592.3622436523438,
+        1034.82763671875
+      ]
+    },
+    {
+      "class_id": 12,
+      "class_name": "text",
+      "confidence": 0.49046790599823,
+      "x_center": 0.054001752535502115,
+      "y_center": 0.9525835673014323,
+      "width": 0.07152477900187175,
+      "height": 0.06010793050130208,
+      "bbox_xyxy": [
+        35.01957702636719,
+        996.3319702148438,
+        172.34715270996094,
+        1061.24853515625
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "staircase",
+      "confidence": 0.4824596047401428,
+      "x_center": 0.8104209582010905,
+      "y_center": 0.7455865930627894,
+      "width": 0.37477003733317055,
+      "height": 0.49598366066261573,
+      "bbox_xyxy": [
+        1196.22900390625,
+        537.40234375,
+        1915.7874755859375,
+        1073.064697265625
+      ]
+    },
+    {
+      "class_id": 2,
+      "class_name": "person",
+      "confidence": 0.45958688855171204,
+      "x_center": 0.41358014742533367,
+      "y_center": 0.7047338132505063,
+      "width": 0.015364297231038411,
+      "height": 0.05984615749782986,
+      "bbox_xyxy": [
+        779.3241577148438,
+        728.7955932617188,
+        808.8236083984375,
+        793.429443359375
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001103.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "staircase",
+        "wall",
+        "ceiling",
+        "light",
+        "window",
+        "fire alarm",
+        "exit sign",
+        "number sign",
+        "handrail",
+        "floor",
+        "person",
+        "stairs",
+        "ladder",
+        "cabinet",
+        "lamp",
+        "fire extinguisher",
+        "text",
+        "building",
+        "hallway",
+        "entrance",
+        "exit",
+        "doorframe"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "number sign",
+          "exit"
+        ],
+        "accessibility": [],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "door",
+          "staircase",
+          "wall",
+          "ceiling",
+          "light",
+          "window",
+          "fire alarm",
+          "handrail",
+          "floor",
+          "stairs",
+          "ladder",
+          "lamp",
+          "fire extinguisher",
+          "text",
+          "building",
+          "hallway",
+          "entrance",
+          "doorframe"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 23,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:35:31.883343"
+    }
+  }
+}

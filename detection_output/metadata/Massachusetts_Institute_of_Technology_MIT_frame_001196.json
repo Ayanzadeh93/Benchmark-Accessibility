@@ -1,0 +1,172 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001196.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:10:02.000867",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "sign",
+    "signage",
+    "door",
+    "ceiling light",
+    "poster",
+    "board",
+    "electrical outlet",
+    "fire alarm",
+    "window",
+    "bulletin board",
+    "text",
+    "image",
+    "frame",
+    "light fixture",
+    "door handle",
+    "door frame",
+    "doorway",
+    "information sign",
+    "announcement board",
+    "whiteboard"
+  ],
+  "num_detections": 3,
+  "detections": [
+    {
+      "class_id": 18,
+      "class_name": "announcement board",
+      "confidence": 0.6406962871551514,
+      "x_center": 0.8758976300557454,
+      "y_center": 0.6363280119719329,
+      "width": 0.24800828297932942,
+      "height": 0.2938750090422454,
+      "bbox_xyxy": [
+        1443.635498046875,
+        528.541748046875,
+        1919.8114013671875,
+        845.9267578125
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 2,
+      "class_name": "door",
+      "confidence": 0.5386125445365906,
+      "x_center": 0.23920311133066813,
+      "y_center": 0.7080092536078559,
+      "width": 0.12650742530822753,
+      "height": 0.5792557892975984,
+      "bbox_xyxy": [
+        337.8228454589844,
+        451.85186767578125,
+        580.7171020507812,
+        1077.4481201171875
+      ]
+    },
+    {
+      "class_id": 2,
+      "class_name": "door",
+      "confidence": 0.4918906092643738,
+      "x_center": 0.4626111666361491,
+      "y_center": 0.7040662129720052,
+      "width": 0.08508377075195313,
+      "height": 0.20606853343822337,
+      "bbox_xyxy": [
+        806.5330200195312,
+        649.114501953125,
+        969.8938598632812,
+        871.6685180664062
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001196.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "ceiling light",
+        "wall",
+        "floor",
+        "poster",
+        "board",
+        "electrical outlet",
+        "fire alarm",
+        "sign",
+        "window",
+        "bulletin board",
+        "text",
+        "image",
+        "frame",
+        "light fixture",
+        "door handle",
+        "door frame",
+        "doorway",
+        "signage",
+        "information board",
+        "announcement board",
+        "whiteboard",
+        "blackboard",
+        "red door",
+        "yellow wall",
+        "white wall",
+        "white ceiling",
+        "white floor",
+        "white door",
+        "white door frame",
+        "white door handle"
+      ],
+      "categories": {
+        "signs": [
+          "sign",
+          "signage"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [],
+        "technology": [],
+        "other": [
+          "door",
+          "ceiling light",
+          "wall",
+          "floor",
+          "poster",
+          "board",
+          "electrical outlet",
+          "fire alarm",
+          "window",
+          "bulletin board",
+          "text",
+          "image",
+          "frame",
+          "light fixture",
+          "door handle",
+          "door frame",
+          "doorway",
+          "information board",
+          "announcement board",
+          "whiteboard",
+          "blackboard",
+          "red door",
+          "yellow wall",
+          "white wall",
+          "white ceiling",
+          "white floor",
+          "white door",
+          "white door frame",
+          "white door handle"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 31,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:10:00.691443"
+    }
+  }
+}

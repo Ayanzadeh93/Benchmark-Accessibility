@@ -1,0 +1,12 @@
+# Floorplan Parsing Bug Fixes
+
+## Bugs Found
+- [x] **BUG 1 — Critical**: [graph_builder.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py) [_repair_isolated_nodes](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#241-412) (lines 380-396) has mangled indentation — Strategy 3 (nearest-neighbour centroid) and Strategy 4 (fallback) are broken, so isolated nodes never get properly repaired
+- [x] **BUG 2**: [_repair_isolated_nodes](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#241-412) Strategy 3 loop body is entirely dead code after the broken `if j == idx:` check — the `continue` and distance calc are unreachable in the current form
+- [x] **BUG 3**: Detection works fine (65 doors, 194 walls, 41 windows detected) but room centroids likely can't be computed because rooms have no `coordinates` field — [_room_centroid()](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#44-49) always returns `None`, so spatial door-room association in [_build_edges_from_detections](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#148-186) fails silently
+
+## Fix Plan
+- [x] Fix [_repair_isolated_nodes](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#241-412) indentation in [graph_builder.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py)
+- [x] Verify the agentic pipeline runs end-to-end on MP-860-3L.png in IJCAI env
+- [x] Verify YOLO detection works (already confirmed: 300 elements detected)
+- [x] No hardcoding — all fixes must be generic

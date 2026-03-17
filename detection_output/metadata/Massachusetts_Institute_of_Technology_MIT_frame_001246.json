@@ -1,0 +1,227 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001246.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:28:24.187547",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "elevator sign",
+    "sign",
+    "ramp",
+    "cabinet",
+    "door",
+    "pipe",
+    "trash can",
+    "board",
+    "fire alarm",
+    "poster",
+    "clock",
+    "window",
+    "ladder",
+    "electrical outlet",
+    "text",
+    "stairs",
+    "hallway",
+    "shutter",
+    "frame"
+  ],
+  "num_detections": 5,
+  "detections": [
+    {
+      "class_id": 7,
+      "class_name": "trash can",
+      "confidence": 0.7817665338516235,
+      "x_center": 0.38974485397338865,
+      "y_center": 0.9006946987575954,
+      "width": 0.0643948237101237,
+      "height": 0.19817657470703126,
+      "bbox_xyxy": [
+        686.4910888671875,
+        865.7349243164062,
+        810.129150390625,
+        1079.765625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 7,
+      "class_name": "trash can",
+      "confidence": 0.6631433963775635,
+      "x_center": 0.493666410446167,
+      "y_center": 0.7826174700701678,
+      "width": 0.018587779998779298,
+      "height": 0.08370802137586805,
+      "bbox_xyxy": [
+        929.9952392578125,
+        800.0245361328125,
+        965.6837768554688,
+        890.42919921875
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 5,
+      "class_name": "door",
+      "confidence": 0.6257104277610779,
+      "x_center": 0.26566285292307534,
+      "y_center": 0.6703979350902416,
+      "width": 0.1274081071217855,
+      "height": 0.6559755961100261,
+      "bbox_xyxy": [
+        387.7608947753906,
+        369.8029479980469,
+        632.3844604492188,
+        1078.256591796875
+      ]
+    },
+    {
+      "class_id": 11,
+      "class_name": "clock",
+      "confidence": 0.4807414710521698,
+      "x_center": 0.49905269940694175,
+      "y_center": 0.5909646775987413,
+      "width": 0.023464552561442056,
+      "height": 0.041570762351707174,
+      "bbox_xyxy": [
+        935.6552124023438,
+        615.7936401367188,
+        980.7071533203125,
+        660.6900634765625
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "door",
+      "confidence": 0.4788225293159485,
+      "x_center": 0.7513756116231283,
+      "y_center": 0.683220135724103,
+      "width": 0.08016096750895182,
+      "height": 0.6311748363353588,
+      "bbox_xyxy": [
+        1365.6866455078125,
+        397.0433349609375,
+        1519.595703125,
+        1078.712158203125
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001246.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "exit sign",
+        "light",
+        "ceiling",
+        "pipe",
+        "wall",
+        "floor",
+        "trash can",
+        "board",
+        "fire alarm",
+        "poster",
+        "clock",
+        "elevator",
+        "window",
+        "ramp",
+        "ladder",
+        "cabinet",
+        "electrical outlet",
+        "lamp",
+        "sign",
+        "text",
+        "building",
+        "stairs",
+        "hallway",
+        "shutter",
+        "frame",
+        "plastic sheet",
+        "cardboard box",
+        "tarp",
+        "wooden board",
+        "metal door",
+        "blue door",
+        "red door",
+        "yellow door",
+        "white wall",
+        "gray trash can",
+        "black pipe",
+        "orange pipe",
+        "white ceiling",
+        "white floor",
+        "red floor",
+        "white light"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "elevator",
+          "sign"
+        ],
+        "accessibility": [
+          "ramp"
+        ],
+        "people": [],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [],
+        "other": [
+          "door",
+          "light",
+          "ceiling",
+          "pipe",
+          "wall",
+          "floor",
+          "trash can",
+          "board",
+          "fire alarm",
+          "poster",
+          "clock",
+          "window",
+          "ladder",
+          "electrical outlet",
+          "lamp",
+          "text",
+          "building",
+          "stairs",
+          "hallway",
+          "shutter",
+          "frame",
+          "plastic sheet",
+          "cardboard box",
+          "tarp",
+          "wooden board",
+          "metal door",
+          "blue door",
+          "red door",
+          "yellow door",
+          "white wall",
+          "gray trash can",
+          "black pipe",
+          "orange pipe",
+          "white ceiling",
+          "white floor",
+          "red floor",
+          "white light"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 42,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:28:23.004720"
+    }
+  }
+}

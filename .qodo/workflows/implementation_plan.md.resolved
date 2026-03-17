@@ -1,0 +1,85 @@
+# Fix Floorplan Parsing Bugs (Graph Builder + Detection Integration)
+
+The floorplan parsing pipeline works on MP-860-3L.png (63-room office plan) but produces an **all-zero adjacency matrix**, meaning graph has nodes but no edges. YOLO detection itself works (65 doors, 194 walls, 41 windows). The root cause is a critical indentation bug in [graph_builder.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py) that corrupts the isolated-node repair logic, plus missing room coordinates preventing spatial door-room association.
+
+## Proposed Changes
+
+### Graph Builder — Indentation + Logic Fix
+
+#### [MODIFY] [graph_builder.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py)
+
+**Bug**: Lines 380-396 in [_repair_isolated_nodes](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#241-412) have completely broken indentation. The current code is:
+
+```python
+for j in range(n):
+    if j == idx:
+if best_j is None:          # ← wrongly at same level as for-loop
+    for j in range(n):       # ← unreachable / wrong scope
+        if j != idx and j not in isolated:
+            best_j = j
+            break
+
+            continue          # ← dead code
+        other_cent = _room_centroid(rooms[j])  # ← dead code
+        if room_cent and other_cent:
+            d = _euclidean(room_cent, other_cent)
+            if d < best_dist:
+                best_dist = d
+                best_j = j
+```
+
+**Fix**: Restore proper indentation so Strategy 3 (centroid proximity) actually iterates rooms, computes distances, and picks the nearest. The fallback (connect to next sequential room) should only trigger after the loop completes with no result:
+
+```python
+        for j in range(n):
+            if j == idx:
+                continue
+            other_cent = _room_centroid(rooms[j])
+            if room_cent and other_cent:
+                d = _euclidean(room_cent, other_cent)
+                if d < best_dist:
+                    best_dist = d
+                    best_j = j
+
+        if best_j is None:
+            # No coordinates available — connect to next sequential room
+            for j in range(n):
+                if j != idx and j not in isolated:
+                    best_j = j
+                    break
+```
+
+---
+
+### No Other Files Modified
+
+YOLO detection ([detection.py](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/detection.py)) is confirmed working. The [_detect_local](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/detection.py#295-330) function correctly finds 65 doors, 194 walls, 41 windows on the test image. No changes needed there.
+
+The parser agent, orchestrator, models, and CLI code are all structurally sound. The all-zero adjacency matrix in [graph.json](file:///c:/Tim/AIDGPT/AidGPT/results/graph.json) is a downstream symptom — the LLM may have returned edges but the graph builder's repair couldn't fix isolated nodes due to the indentation bug.
+
+## Verification Plan
+
+### Automated Tests
+
+1. **Import check** (IJCAI env):
+   ```
+   conda run -n IJCAI python -c "from floorparsing.Agentic.graph_builder import _repair_isolated_nodes; print('OK')"
+   ```
+
+2. **Quick verify** (IJCAI env):
+   ```
+   conda run -n IJCAI python c:\Tim\AIDGPT\AidGPT\floorparsing\tests\verify_quick.py
+   ```
+
+3. **YOLO detection on MP-860-3L** (IJCAI env):
+   ```
+   conda run -n IJCAI python -c "import sys; sys.path.insert(0, r'c:\Tim\AIDGPT\AidGPT'); from floorparsing.detection import detect_floor_elements; e = detect_floor_elements(r'C:\Tim\AIDGPT\AidGPT\alt\dataset\floorplan\images\MP-860-3L.png', backend='local'); print(f'{len(e)} elements detected')"
+   ```
+
+4. **Unit test for [_repair_isolated_nodes](file:///c:/Tim/AIDGPT/AidGPT/floorparsing/Agentic/graph_builder.py#241-412)** — write a small test that creates 3 rooms (one isolated) and verifies it gets connected:
+   ```
+   conda run -n IJCAI python c:\Tim\AIDGPT\AidGPT\floorparsing\tests\test_repair_isolated.py
+   ```
+
+### Manual Verification
+- Run the full agentic pipeline on MP-860-3L.png and confirm the resulting [graph.json](file:///c:/Tim/AIDGPT/AidGPT/results/graph.json) has a non-zero adjacency matrix and edges

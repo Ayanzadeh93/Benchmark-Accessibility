@@ -1,0 +1,155 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001147.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:51:59.279988",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "sign",
+    "number sign",
+    "hallway",
+    "corkboard",
+    "pipe",
+    "door",
+    "fire alarm",
+    "window",
+    "poster",
+    "text",
+    "bulletin board",
+    "electrical conduit",
+    "whiteboard",
+    "red light",
+    "black door",
+    "glass window",
+    "reflector"
+  ],
+  "num_detections": 3,
+  "detections": [
+    {
+      "class_id": 6,
+      "class_name": "door",
+      "confidence": 0.5578349828720093,
+      "x_center": 0.5637445449829102,
+      "y_center": 0.711750821714048,
+      "width": 0.03788960774739583,
+      "height": 0.3148832533094618,
+      "bbox_xyxy": [
+        1046.0155029296875,
+        598.6539306640625,
+        1118.7635498046875,
+        938.7278442382812
+      ]
+    },
+    {
+      "class_id": 10,
+      "class_name": "text",
+      "confidence": 0.4976682960987091,
+      "x_center": 0.05418246388435364,
+      "y_center": 0.9524090802228009,
+      "width": 0.07281847397486368,
+      "height": 0.06004050925925926,
+      "bbox_xyxy": [
+        34.124595642089844,
+        996.179931640625,
+        173.93606567382812,
+        1061.023681640625
+      ]
+    },
+    {
+      "class_id": 0,
+      "class_name": "exit sign",
+      "confidence": 0.4695846140384674,
+      "x_center": 0.7942650794982911,
+      "y_center": 0.3791545585349754,
+      "width": 0.04611632029215495,
+      "height": 0.07203863638418692,
+      "bbox_xyxy": [
+        1480.71728515625,
+        370.5860595703125,
+        1569.2606201171875,
+        448.3877868652344
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001147.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "hallway",
+        "corkboard",
+        "exit sign",
+        "light",
+        "pipe",
+        "ceiling",
+        "door",
+        "floor",
+        "sign",
+        "fire alarm",
+        "window",
+        "poster",
+        "text",
+        "bulletin board",
+        "number sign",
+        "lamp",
+        "wall",
+        "electrical conduit",
+        "whiteboard",
+        "red light",
+        "black door",
+        "glass window",
+        "reflector",
+        "building"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign",
+          "sign",
+          "number sign"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [],
+        "technology": [],
+        "other": [
+          "hallway",
+          "corkboard",
+          "light",
+          "pipe",
+          "ceiling",
+          "door",
+          "floor",
+          "fire alarm",
+          "window",
+          "poster",
+          "text",
+          "bulletin board",
+          "lamp",
+          "wall",
+          "electrical conduit",
+          "whiteboard",
+          "red light",
+          "black door",
+          "glass window",
+          "reflector",
+          "building"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 24,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:51:58.074956"
+    }
+  }
+}

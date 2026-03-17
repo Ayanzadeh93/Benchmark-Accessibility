@@ -1,0 +1,28 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001201.jpg",
+  "timestamp": "2026-01-23T13:11:21.100195",
+  "vlm_model": "qwen",
+  "used_vlm_json": null,
+  "classes": [
+    "sign",
+    "exit sign",
+    "person",
+    "security camera",
+    "fire alarm microphone",
+    "fire alarm monitor",
+    "cabinet",
+    "fire alarm cabinet",
+    "door",
+    "hallway",
+    "ceiling light",
+    "fire alarm",
+    "window",
+    "board",
+    "text",
+    "street",
+    "entrance",
+    "stairs",
+    "electrical outlet",
+    "fire extinguisher"
+  ]
+}

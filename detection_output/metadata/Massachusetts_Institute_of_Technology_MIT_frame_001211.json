@@ -1,0 +1,202 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001211.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T13:16:42.273044",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "sign",
+    "exit sign",
+    "monitor",
+    "security camera",
+    "cabinet",
+    "door",
+    "hallway",
+    "pipe",
+    "board",
+    "bulletin board",
+    "fire extinguisher",
+    "ladder",
+    "rle at mit",
+    "university walk tour",
+    "metallic container",
+    "window",
+    "frame",
+    "electrical outlet",
+    "hose",
+    "trolley"
+  ],
+  "num_detections": 4,
+  "detections": [
+    {
+      "class_id": 9,
+      "class_name": "bulletin board",
+      "confidence": 0.6915740370750427,
+      "x_center": 0.4455024083455404,
+      "y_center": 0.5869595562970197,
+      "width": 0.06129620869954427,
+      "height": 0.21648763020833334,
+      "bbox_xyxy": [
+        796.520263671875,
+        517.0130004882812,
+        914.208984375,
+        750.8196411132812
+      ]
+    },
+    {
+      "class_id": 14,
+      "class_name": "metallic container",
+      "confidence": 0.652350902557373,
+      "x_center": 0.651367727915446,
+      "y_center": 0.7861068160445602,
+      "width": 0.02764886220296224,
+      "height": 0.133034826208044,
+      "bbox_xyxy": [
+        1224.0831298828125,
+        777.1565551757812,
+        1277.1689453125,
+        920.8341674804688
+      ]
+    },
+    {
+      "class_id": 5,
+      "class_name": "door",
+      "confidence": 0.6230842471122742,
+      "x_center": 0.3716067632039388,
+      "y_center": 0.6923043851499204,
+      "width": 0.0798550287882487,
+      "height": 0.6116151880334925,
+      "bbox_xyxy": [
+        636.8241577148438,
+        417.4165344238281,
+        790.1458129882812,
+        1077.9609375
+      ]
+    },
+    {
+      "class_id": 0,
+      "class_name": "sign",
+      "confidence": 0.5120924711227417,
+      "x_center": 0.15700982411702474,
+      "y_center": 0.5212488810221354,
+      "width": 0.10739796956380208,
+      "height": 0.1708107277199074,
+      "bbox_xyxy": [
+        198.3568115234375,
+        470.71099853515625,
+        404.5609130859375,
+        655.1865844726562
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001211.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "door",
+        "hallway",
+        "light",
+        "pipe",
+        "ceiling",
+        "wall",
+        "floor",
+        "board",
+        "bulletin board",
+        "sign",
+        "fire extinguisher",
+        "exit sign",
+        "cabinet",
+        "monitor",
+        "ladder",
+        "rle at mit",
+        "university walk tour",
+        "metallic container",
+        "security camera",
+        "window",
+        "frame",
+        "electrical outlet",
+        "lamp",
+        "hose",
+        "trolley",
+        "stairs",
+        "building",
+        "door handle",
+        "door frame",
+        "window frame",
+        "glass door",
+        "white wall",
+        "red fire alarm",
+        "black cable",
+        "white ceiling",
+        "white floor",
+        "white pipe",
+        "white light fixture"
+      ],
+      "categories": {
+        "signs": [
+          "sign",
+          "exit sign"
+        ],
+        "accessibility": [],
+        "people": [],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [
+          "monitor",
+          "security camera"
+        ],
+        "other": [
+          "door",
+          "hallway",
+          "light",
+          "pipe",
+          "ceiling",
+          "wall",
+          "floor",
+          "board",
+          "bulletin board",
+          "fire extinguisher",
+          "ladder",
+          "rle at mit",
+          "university walk tour",
+          "metallic container",
+          "window",
+          "frame",
+          "electrical outlet",
+          "lamp",
+          "hose",
+          "trolley",
+          "stairs",
+          "building",
+          "door handle",
+          "door frame",
+          "window frame",
+          "glass door",
+          "white wall",
+          "red fire alarm",
+          "black cable",
+          "white ceiling",
+          "white floor",
+          "white pipe",
+          "white light fixture"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 38,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T13:16:41.073771"
+    }
+  }
+}

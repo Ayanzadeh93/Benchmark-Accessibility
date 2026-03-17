@@ -1,0 +1,257 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001165.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:57:28.162777",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "person",
+    "security camera",
+    "window screen",
+    "cabinet",
+    "staircase",
+    "door",
+    "window",
+    "backpack",
+    "handrail",
+    "fire extinguisher",
+    "cross",
+    "pipe",
+    "frame",
+    "stairs",
+    "ladder",
+    "text",
+    "label",
+    "electrical outlet",
+    "railing"
+  ],
+  "num_detections": 7,
+  "detections": [
+    {
+      "class_id": 1,
+      "class_name": "person",
+      "confidence": 0.9183086156845093,
+      "x_center": 0.6857339223225911,
+      "y_center": 0.8266295821578414,
+      "width": 0.09004491170247396,
+      "height": 0.3004201253255208,
+      "bbox_xyxy": [
+        1230.166015625,
+        730.5330810546875,
+        1403.05224609375,
+        1054.98681640625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 1,
+      "class_name": "person",
+      "confidence": 0.8648139238357544,
+      "x_center": 0.5753041267395019,
+      "y_center": 0.7896551344129774,
+      "width": 0.06564884185791016,
+      "height": 0.4203587849934896,
+      "bbox_xyxy": [
+        1041.56103515625,
+        625.8338012695312,
+        1167.6068115234375,
+        1079.8212890625
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 8,
+      "class_name": "backpack",
+      "confidence": 0.7801641225814819,
+      "x_center": 0.5457086404164632,
+      "y_center": 0.7038597389503761,
+      "width": 0.04352280298868815,
+      "height": 0.13718284324363425,
+      "bbox_xyxy": [
+        1005.9786987304688,
+        686.0897827148438,
+        1089.54248046875,
+        834.2472534179688
+      ]
+    },
+    {
+      "class_id": 13,
+      "class_name": "frame",
+      "confidence": 0.6990696787834167,
+      "x_center": 0.9240217208862305,
+      "y_center": 0.6213617112901476,
+      "width": 0.0576141357421875,
+      "height": 0.11832021077473959,
+      "bbox_xyxy": [
+        1718.8121337890625,
+        607.177734375,
+        1829.4312744140625,
+        734.9635620117188
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 6,
+      "class_name": "door",
+      "confidence": 0.6434878706932068,
+      "x_center": 0.2909311056137085,
+      "y_center": 0.6432653215196398,
+      "width": 0.11021828651428223,
+      "height": 0.6339197512026187,
+      "bbox_xyxy": [
+        452.7781677246094,
+        352.4098815917969,
+        664.3972778320312,
+        1037.043212890625
+      ]
+    },
+    {
+      "class_id": 3,
+      "class_name": "window screen",
+      "confidence": 0.4882088303565979,
+      "x_center": 0.7094525655110677,
+      "y_center": 0.7774602536801939,
+      "width": 0.15633455912272134,
+      "height": 0.34778674090350115,
+      "bbox_xyxy": [
+        1212.0677490234375,
+        651.8522338867188,
+        1512.2301025390625,
+        1027.4619140625
+      ]
+    },
+    {
+      "class_id": 15,
+      "class_name": "ladder",
+      "confidence": 0.4855276048183441,
+      "x_center": 0.8521556854248047,
+      "y_center": 0.8689138341833044,
+      "width": 0.06917076110839844,
+      "height": 0.2298903853804977,
+      "bbox_xyxy": [
+        1569.7349853515625,
+        814.2861328125,
+        1702.5428466796875,
+        1062.5677490234375
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001165.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "staircase",
+        "door",
+        "window",
+        "exit sign",
+        "backpack",
+        "handrail",
+        "person",
+        "fire extinguisher",
+        "cross",
+        "lighting",
+        "ceiling",
+        "pipe",
+        "floor",
+        "wall",
+        "frame",
+        "stairs",
+        "ladder",
+        "cabinet",
+        "building",
+        "text",
+        "label",
+        "electrical outlet",
+        "lamp",
+        "railing",
+        "step",
+        "door handle",
+        "security camera",
+        "window frame",
+        "window sill",
+        "window ledge",
+        "window pane",
+        "window glass",
+        "window sash",
+        "window latch",
+        "window cover",
+        "window blind",
+        "window shade",
+        "window screen",
+        "window curtain",
+        "window trim",
+        "window seal"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign"
+        ],
+        "accessibility": [],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [
+          "security camera",
+          "window screen"
+        ],
+        "other": [
+          "staircase",
+          "door",
+          "window",
+          "backpack",
+          "handrail",
+          "fire extinguisher",
+          "cross",
+          "lighting",
+          "ceiling",
+          "pipe",
+          "floor",
+          "wall",
+          "frame",
+          "stairs",
+          "ladder",
+          "building",
+          "text",
+          "label",
+          "electrical outlet",
+          "lamp",
+          "railing",
+          "step",
+          "door handle",
+          "window frame",
+          "window sill",
+          "window ledge",
+          "window pane",
+          "window glass",
+          "window sash",
+          "window latch",
+          "window cover",
+          "window blind",
+          "window shade",
+          "window curtain",
+          "window trim",
+          "window seal"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 41,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:57:26.855384"
+    }
+  }
+}

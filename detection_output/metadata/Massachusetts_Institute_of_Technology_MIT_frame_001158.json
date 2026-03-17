@@ -1,0 +1,277 @@
+{
+  "image": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001158.jpg",
+  "image_width": 1920,
+  "image_height": 1080,
+  "timestamp": "2026-01-23T12:56:09.483854",
+  "detector": {
+    "name": "ensemble",
+    "gdino_model_id": "IDEA-Research/grounding-dino-base",
+    "yolo_model_size": "x",
+    "conf_threshold": 0.45,
+    "text_threshold": 0.2,
+    "multi_prompt": false,
+    "nms_iou": 0.5
+  },
+  "vocab": [
+    "exit sign",
+    "ramp",
+    "person",
+    "security camera",
+    "monitor",
+    "cabinet",
+    "fire alarm",
+    "door",
+    "board",
+    "staircase",
+    "window",
+    "pipe",
+    "sink",
+    "bulletin board",
+    "electrical outlet",
+    "stairs",
+    "ladder",
+    "frame",
+    "poster",
+    "text"
+  ],
+  "num_detections": 7,
+  "detections": [
+    {
+      "class_id": 17,
+      "class_name": "frame",
+      "confidence": 0.8109750747680664,
+      "x_center": 0.5506703535715739,
+      "y_center": 0.6680304633246528,
+      "width": 0.06540759404500325,
+      "height": 0.28710801866319446,
+      "bbox_xyxy": [
+        994.4957885742188,
+        566.4345703125,
+        1120.078369140625,
+        876.51123046875
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 2,
+      "class_name": "person",
+      "confidence": 0.6820259094238281,
+      "x_center": 0.6523304939270019,
+      "y_center": 0.5817850748697917,
+      "width": 0.01925182342529297,
+      "height": 0.09619377983940972,
+      "bbox_xyxy": [
+        1233.9927978515625,
+        576.3832397460938,
+        1270.956298828125,
+        680.2725219726562
+      ],
+      "has_segmentation": false
+    },
+    {
+      "class_id": 13,
+      "class_name": "bulletin board",
+      "confidence": 0.6518042683601379,
+      "x_center": 0.5503652572631836,
+      "y_center": 0.6653779771592881,
+      "width": 0.07282244364420573,
+      "height": 0.2894868073640046,
+      "bbox_xyxy": [
+        986.791748046875,
+        562.2853393554688,
+        1126.61083984375,
+        874.9310913085938
+      ]
+    },
+    {
+      "class_id": 12,
+      "class_name": "sink",
+      "confidence": 0.6383535861968994,
+      "x_center": 0.8914349555969239,
+      "y_center": 0.8644313953540943,
+      "width": 0.09475294748942058,
+      "height": 0.08970489501953124,
+      "bbox_xyxy": [
+        1620.59228515625,
+        885.145263671875,
+        1802.5179443359375,
+        982.0265502929688
+      ]
+    },
+    {
+      "class_id": 6,
+      "class_name": "fire alarm",
+      "confidence": 0.5255056619644165,
+      "x_center": 0.17236680189768475,
+      "y_center": 0.19149720580489546,
+      "width": 0.07025157610575358,
+      "height": 0.14663634830050998,
+      "bbox_xyxy": [
+        263.50274658203125,
+        127.63335418701172,
+        398.3857727050781,
+        286.0006103515625
+      ]
+    },
+    {
+      "class_id": 9,
+      "class_name": "staircase",
+      "confidence": 0.4914242625236511,
+      "x_center": 0.680443541208903,
+      "y_center": 0.6853368405942564,
+      "width": 0.06969165802001953,
+      "height": 0.25280835186993633,
+      "bbox_xyxy": [
+        1239.547607421875,
+        603.6472778320312,
+        1373.3555908203125,
+        876.6802978515625
+      ]
+    },
+    {
+      "class_id": 19,
+      "class_name": "text",
+      "confidence": 0.4562259912490845,
+      "x_center": 0.05390977462132772,
+      "y_center": 0.9517849674931279,
+      "width": 0.07194696267445883,
+      "height": 0.05880098696108218,
+      "bbox_xyxy": [
+        34.43768310546875,
+        996.1752319335938,
+        172.5758514404297,
+        1059.6802978515625
+      ]
+    }
+  ],
+  "vlm_result": {
+    "keyframe_path": "C:\\Tim\\Database\\InVLM\\My Data\\Scene_summary.v8i.yolov11\\test\\Fianl Version\\phase1\\Massachusetts_Institute_of_Technology_MIT_frame_001158.jpg",
+    "model": "qwen",
+    "objects": {
+      "objects": [
+        "fire alarm",
+        "door",
+        "board",
+        "staircase",
+        "window",
+        "light",
+        "ceiling",
+        "pipe",
+        "sink",
+        "person",
+        "exit sign",
+        "bulletin board",
+        "floor",
+        "wall",
+        "electrical outlet",
+        "stairs",
+        "ramp",
+        "ladder",
+        "cabinet",
+        "lamp",
+        "frame",
+        "poster",
+        "text",
+        "building",
+        "hallway",
+        "bathroom",
+        "water fountain",
+        "security camera",
+        "monitor",
+        "speaker",
+        "door handle",
+        "handrail",
+        "window frame",
+        "lighting fixture",
+        "ceiling fan",
+        "ventilation system",
+        "exhaust vent",
+        "power strip",
+        "switch",
+        "wiring",
+        "conduit",
+        "plumbing",
+        "metal railing",
+        "glass door",
+        "blackboard",
+        "whiteboard",
+        "paper",
+        "magnetic board",
+        "notice board",
+        "information board",
+        "announcement board"
+      ],
+      "categories": {
+        "signs": [
+          "exit sign"
+        ],
+        "accessibility": [
+          "ramp"
+        ],
+        "people": [
+          "person"
+        ],
+        "furniture": [
+          "cabinet"
+        ],
+        "technology": [
+          "security camera",
+          "monitor"
+        ],
+        "other": [
+          "fire alarm",
+          "door",
+          "board",
+          "staircase",
+          "window",
+          "light",
+          "ceiling",
+          "pipe",
+          "sink",
+          "bulletin board",
+          "floor",
+          "wall",
+          "electrical outlet",
+          "stairs",
+          "ladder",
+          "lamp",
+          "frame",
+          "poster",
+          "text",
+          "building",
+          "hallway",
+          "bathroom",
+          "water fountain",
+          "speaker",
+          "door handle",
+          "handrail",
+          "window frame",
+          "lighting fixture",
+          "ceiling fan",
+          "ventilation system",
+          "exhaust vent",
+          "power strip",
+          "switch",
+          "wiring",
+          "conduit",
+          "plumbing",
+          "metal railing",
+          "glass door",
+          "blackboard",
+          "whiteboard",
+          "paper",
+          "magnetic board",
+          "notice board",
+          "information board",
+          "announcement board"
+        ]
+      },
+      "scene_description": "",
+      "primary_focus": "",
+      "num_objects": 51,
+      "error": false,
+      "model": "Qwen3-VL-2B",
+      "timestamp": "2026-01-23T12:56:08.239733"
+    }
+  }
+}
