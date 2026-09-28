@@ -46,3 +46,6 @@ runs/
 # OS
 .DS_Store
 Thumbs.db
+
+# build artefacts
+*.log
