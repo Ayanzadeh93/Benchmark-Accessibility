@@ -1,0 +1,8 @@
+extends: R5a.yaml
+rung: R5b
+parent: R5a
+record_type: ablation
+factor_changed: seed
+factor_keys: [seed]
+notes: "Seed 2028; used for m = max(2s, 0.5)."
+seed: 2028

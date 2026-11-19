@@ -1,0 +1,8 @@
+extends: R0.yaml
+rung: R1a
+parent: R0
+record_type: ablation
+factor_changed: loss.si
+factor_keys: [loss.preset, loss.si_form, loss.si_lambda]
+notes: "A7: corrected L_SI (weights applied once), lambda .45; eff_mask kept for prox and grad. Gate: D1 >= R0 - 1.0."
+loss: {preset: R1a}

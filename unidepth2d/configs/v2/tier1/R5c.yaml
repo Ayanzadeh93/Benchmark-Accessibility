@@ -1,0 +1,8 @@
+extends: R5a.yaml
+rung: R5c
+parent: R5a
+record_type: ablation
+factor_changed: seed
+factor_keys: [seed]
+notes: "Seed 2029; s <= 1.0 expected, otherwise m uses the measured s. Cut order step 2 drops this run."
+seed: 2029

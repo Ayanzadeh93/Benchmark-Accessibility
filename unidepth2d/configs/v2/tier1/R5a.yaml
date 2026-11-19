@@ -1,0 +1,9 @@
+extends: R5a-cover.yaml
+rung: R5a
+parent: R5a-cover
+record_type: ablation
+factor_changed: data.zoom_crop
+factor_keys: [data.dataset.zoom_crop.p]
+notes: "A7 split of R5a (R5a-nozoom): remove the S5 zoom crop. Gate: D1 >= R4d - 1.0. Parent of R5b/R5c, K1, C0."
+data:
+  dataset: {zoom_crop: {p: 0.0}}

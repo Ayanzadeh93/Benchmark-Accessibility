@@ -1,0 +1,8 @@
+extends: R1b.yaml
+rung: R2
+parent: R1b
+record_type: ablation
+factor_changed: loss.eg_ssi
+factor_keys: [loss.preset, loss.eg_ssi_weight]
+notes: "Remove eg_ssi. Gate: D1 >= R1 - 0.5; BF >= R1 - .005."
+loss: {preset: R2}

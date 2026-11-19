@@ -1,0 +1,9 @@
+extends: R5a.yaml
+rung: K1
+parent: R5a
+record_type: ablation
+factor_changed: data.draw_weights
+factor_keys: [data.draw_weights]
+notes: "Add X-indoor (needs train.pool.by_pool.x_indoor in roles.yaml, labelled by T1-01). Accept if D1 >= R5 mean + m. K2 deleted (A1)."
+data:
+  draw_weights: {own+x_indoor: 0.5, nyu: 0.5}

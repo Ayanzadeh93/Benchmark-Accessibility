@@ -1101,6 +1101,9 @@ def apply_smoke(cfg: dict, synthetic: bool, device: Optional[str]) -> dict:
         known = {"own", "nyu"}
         if not any(set(k.split("+")) & known for k in dw):
             c["data"]["draw_weights"] = {"own": 1.0}
+    else:
+        # real-data smoke: a few dev rows per source, not all 4,137 D_SUN images on CPU
+        c["eval"]["dataset"] = dict(c["eval"]["dataset"], limit=6)
     return c
 
 

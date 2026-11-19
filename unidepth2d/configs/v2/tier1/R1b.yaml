@@ -1,0 +1,8 @@
+extends: R1a.yaml
+rung: R1b
+parent: R1a
+record_type: ablation
+factor_changed: loss.range_weight_prox_grad
+factor_keys: [loss.preset, loss.prox_mask, loss.grad_mask]
+notes: "A7: range weight removed from prox and grad (binary M)."
+loss: {preset: R1b}

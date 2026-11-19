@@ -1,0 +1,11 @@
+extends: ../base.yaml
+rung: R0
+parent: null
+record_type: root
+factor_keys: []
+notes: "Legacy reference: efficientvit_b1, S16 recipe (ray map + FiLM, per-row K), own .5 + NYU .5, batch 12. Gate: D1 >= 65, no NaN."
+model: {variant: legacy, legacy_rung: R0, decoder_mode: fpn, pretrained: true}
+loss: {preset: R0}
+data:
+  dataset: {intrinsics: true}
+train: {intrinsics: batch}

@@ -1,0 +1,36 @@
+# V2 (CoDeQ) base config: every rung extends this (docs/V2_PLAN.md section 7.1).
+# It repeats distill/v2/train.py DEFAULTS so a rung file reads on its own.
+schema: v2-train/1
+seed: 2027
+data:
+  roles: configs/v2/roles.yaml
+  train_split: train
+  draw_weights: {own: 0.5, nyu: 0.5}      # plan 5.2: R0 to R5 own .5 + NYU .5
+  dataset:
+    pipeline: squash                      # R0-R4d: 640x480 squashed cache + S5 zoom crop
+    hw: [480, 640]
+    intrinsics: false
+    zoom_crop: {p: 0.5, min_scale: 0.5}   # S16 crop_context
+    flip_p: 0.5
+    jitter: {p: 0.5, gain: 0.15, bias: 10.0}
+train:
+  epochs: 10
+  draws_per_epoch: 12000
+  batch_size: 12
+  grad_accum: 1
+  lr: 3.0e-4
+  weight_decay: 0.01
+  amp: true
+  grad_clip: 1.0
+  ema_decay: 0.999
+  intrinsics: none
+eval:
+  enabled: true
+  split: dev                              # D_SUN: every ladder decision
+  dataset: {pipeline: squash, hw: [480, 640]}
+  camera_mode: none
+  n_boot: 10000
+runtime:
+  device: cuda
+  num_workers: 4
+  max_epoch_seconds: 420

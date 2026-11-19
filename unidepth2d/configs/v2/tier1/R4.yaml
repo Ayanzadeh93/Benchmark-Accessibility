@@ -1,0 +1,8 @@
+extends: R3.yaml
+rung: R4
+parent: R3
+record_type: ablation
+factor_changed: model.encoder
+factor_keys: [model]
+notes: "Encoder to the CoDeQ-N plain encoder (legacy FPN decoder kept). HARD GATE: PTQ keeps >= 99% of pixels within 1.25x of fp32; D1 >= R3 - 2.0."
+model: {__replace__: true, variant: N, decoder_mode: fpn, pretrained: true}

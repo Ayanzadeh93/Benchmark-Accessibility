@@ -1,0 +1,11 @@
+extends: R2.yaml
+rung: R3
+parent: R2
+record_type: ablation
+factor_changed: model.camera_inputs
+factor_keys: [model.legacy_rung, model.legacy_ray_map, model.legacy_use_intrinsics, data.dataset.intrinsics, train.intrinsics]
+notes: "Remove ray map and FiLM (RGB only); no K is fed in training. Gate: D1 >= R2 - 1.5."
+model: {variant: legacy, legacy_rung: R3, decoder_mode: fpn, pretrained: true}
+data:
+  dataset: {intrinsics: false}
+train: {intrinsics: none}

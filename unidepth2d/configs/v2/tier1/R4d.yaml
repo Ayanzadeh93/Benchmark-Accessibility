@@ -1,0 +1,8 @@
+extends: R4.yaml
+rung: R4d
+parent: R4
+record_type: ablation
+factor_changed: model.decoder
+factor_keys: [model.decoder_mode]
+notes: "Legacy FPN to the closed decoder, mode s4. Gate: D1 >= R4 - 1.0; allowlist test passes."
+model: {decoder_mode: s4}
