@@ -435,12 +435,14 @@ def rng_state() -> dict:
 
 
 def set_rng_state(st: dict) -> None:
+    """Restore :func:`rng_state`. torch's setters need CPU ByteTensors, but a checkpoint loaded
+    with ``map_location=<cuda device>`` holds the saved states on the GPU: move them back first."""
     random.setstate(st["python"])
     np.random.set_state(st["numpy"])
-    torch.set_rng_state(st["torch"])
+    torch.set_rng_state(torch.as_tensor(st["torch"]).cpu())
     if "cuda" in st and torch.cuda.is_available():
         try:
-            torch.cuda.set_rng_state_all(st["cuda"])
+            torch.cuda.set_rng_state_all([torch.as_tensor(s).cpu() for s in st["cuda"]])
         except Exception:                                      # noqa: BLE001 - device count changed
             pass
 
