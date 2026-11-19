@@ -1,0 +1,11 @@
+extends: R4d.yaml
+rung: R5a-cover
+parent: R4d
+record_type: ablation
+factor_changed: data.pipeline
+factor_keys: [data.dataset.pipeline, eval.dataset.pipeline]
+notes: "A7 split of R5a: aspect-preserving cover cache replaces the squash (zoom crop kept). Eval uses the centre crop (identity on 4:3 D_SUN)."
+data:
+  dataset: {pipeline: cover}
+eval:
+  dataset: {pipeline: cover}

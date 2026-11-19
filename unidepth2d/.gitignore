@@ -1,0 +1,16 @@
+# Heavy / generated — never commit (comments MUST be on their own line)
+# outputs/ is 18+ GB of teacher depth, checkpoints, per-object JSON, result data
+outputs/
+# UniDepth-main/ is a third-party copy of the official UniDepth repo (CC-BY-NC)
+UniDepth-main/
+__pycache__/
+*.pyc
+*.egg-info/
+*.log
+*.pptx
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+.cache/
+wandb/

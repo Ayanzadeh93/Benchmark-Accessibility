@@ -1,0 +1,138 @@
+{
+  "S0-base": {
+    "ckpt": "outputs/checkpoints/best.pt",
+    "backbone": "efficientvit_b1",
+    "recipe": "own-only pseudo-labels, 384x512, no intrinsics",
+    "params_M": 5.11
+  },
+  "S1-cam": {
+    "ckpt": "outputs/checkpoints/intrinsics/best.pt",
+    "backbone": "efficientvit_b1",
+    "recipe": "S0 + FiLM camera intrinsics",
+    "params_M": 5.12
+  },
+  "S2-mix": {
+    "ckpt": "outputs/checkpoints/b1_mix/best.pt",
+    "backbone": "efficientvit_b1",
+    "recipe": "multi-source (own+NYU+SUN) + FiLM + EMA, 480x640",
+    "params_M": 5.12
+  },
+  "S3-mix-L": {
+    "ckpt": "outputs/checkpoints/b2_mix/best.pt",
+    "backbone": "efficientvit_b2",
+    "recipe": "S2-mix recipe on efficientvit_b2",
+    "params_M": 15.48
+  },
+  "S4-edge": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S4_edge/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s4",
+    "params_M": 5.12,
+    "best_val_absrel": 0.09422874493355876
+  },
+  "S5-crop": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S5_crop/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s5",
+    "params_M": 5.12,
+    "best_val_absrel": 0.10139952101566235
+  },
+  "S6-unc": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S6_unc/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s6",
+    "params_M": 5.12,
+    "best_val_absrel": 0.09821393269868124
+  },
+  "S7-task": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S7_task/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s7",
+    "params_M": 5.12,
+    "best_val_absrel": 0.1105209348764396
+  },
+  "S8-assist": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S8_assist/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s8",
+    "params_M": 5.12,
+    "best_val_absrel": 0.19943159433140156
+  },
+  "S11-ray": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S11_ray/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + ray",
+    "params_M": 5.12,
+    "best_val_absrel": 0.09471062611913986
+  },
+  "S12-bins": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S12_bins/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + bins",
+    "params_M": 5.13,
+    "best_val_absrel": 0.09196225407400302
+  },
+  "S13-norm": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S13_norm/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + norm",
+    "params_M": 5.12,
+    "best_val_absrel": 0.10133514800146828
+  },
+  "S14-range": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S14_range/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + range",
+    "params_M": 5.12,
+    "best_val_absrel": 0.09501518938002479
+  },
+  "S9-ultra": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S9_ultra/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range",
+    "params_M": 5.12,
+    "best_val_absrel": 0.10537139895295294
+  },
+  "S10-ultra-L": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S10_ultra_L/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range",
+    "params_M": 15.48,
+    "best_val_absrel": 0.0900266322152609
+  },
+  "S15-anch-icd": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S15_anch_icd/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range,anch,icd",
+    "params_M": 15.48,
+    "best_val_absrel": 0.08998313399289197
+  },
+  "S18-zsclean": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S18_zsclean/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range",
+    "params_M": 15.48,
+    "best_val_absrel": 0.09401855745182981
+  },
+  "S16-prox": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S16_prox/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range,prox",
+    "params_M": 15.48,
+    "best_val_absrel": 0.08762617113282871
+  },
+  "S19-sced-probe": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S19_sced/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range,prox,scale,sced",
+    "params_M": 15.48,
+    "best_val_absrel": 0.08792963659912174
+  },
+  "S21-scale2-probe": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/S21_scale2/best.pt",
+    "backbone": "efficientvit_b2.r224_in1k",
+    "recipe": "S2-mix + s4,s5,ray,range,prox,scale2",
+    "params_M": 15.48,
+    "best_val_absrel": 0.08621217350017941
+  }
+}

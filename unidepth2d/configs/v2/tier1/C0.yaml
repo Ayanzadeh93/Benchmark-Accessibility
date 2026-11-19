@@ -1,0 +1,9 @@
+extends: R5a.yaml
+rung: C0
+parent: R5a
+record_type: ablation
+factor_changed: data.draw_weights
+factor_keys: [data.draw_weights]
+notes: "Remove NYU (NYU-free branch). Report the cost; flag if above 6 points."
+data:
+  draw_weights: {own: 1.0}

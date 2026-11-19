@@ -1,0 +1,9 @@
+extends: C0.yaml
+rung: C1
+parent: C0
+record_type: ablation
+factor_changed: data.draw_weights
+factor_keys: [data.draw_weights]
+notes: "Add X-indoor to the NYU-free branch. Accept if D1 >= C0 + m. C2 deleted (A1)."
+data:
+  draw_weights: {own+x_indoor: 1.0}

@@ -1,0 +1,313 @@
+"""Scale-gap analysis: how much of each model's zero-shot metric error is a
+per-image LOW-DIMENSIONAL scale/shift error rather than a structure error?
+
+Two modes:
+
+  # A) aggregate table from existing results_bench JSONs (no model runs)
+  python -m benchmark.scale_gap --from-results
+
+  # B) per-image probe: run a model, fit per-image corrections of increasing
+  #    capacity (median scalar / log-shift / log-affine), record the fitted
+  #    parameters + normalized intrinsics for K-predictability analysis
+  python -m benchmark.scale_gap --probe --dataset ibims --model student:outputs/checkpoints/S16_prox/best.pt
+  python -m benchmark.scale_gap --probe --dataset sun --variant raw --limit 500 --model v2-s --res-level 9
+
+Motivation (measured, PAPER_TABLES.md dense rows): students on IBims have
+d1 .66-.71 but d1_ssi .93 — the OOD collapse is almost entirely a per-image
+scale/shift error. d1_si (median SCALAR only) already recovers most of it.
+This script quantifies that decomposition per model/dataset (mode A) and tests
+whether the fitted per-image scale is predictable from the camera intrinsics
+(mode B) — the premise of the SCED (scale-disentangled, camera-equivariant
+distillation) contribution.
+
+Correction families fitted per image (log space, mirroring the student's
+affine-head form logD' = a*logD + b; protocol.py's ssi/si stay the linear-space
+official semantics and are NOT redefined here):
+  raw       : none
+  si        : official median-ratio scalar (linear space; = d1_si semantics)
+  logshift  : b only  (single scalar e^b — what a 1-D scale head must predict)
+  logaffine : (a, b)  (what the N4/SCED affine head can express)
+
+Outputs: mode A writes docs/SCALE_GAP.md + results_bench/scale_gap.csv;
+mode B writes results_bench/scalegap_probe__<dataset>[-<variant>]__<model>.csv
+(one row per image: fitted params, per-family d1/arel, fx/W fy/H) and prints a
+summary with Pearson/Spearman correlation of b (log-shift) vs log(fy/H).
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import glob
+import json
+import os
+
+import numpy as np
+
+from benchmark import protocol
+
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results_bench")
+DOCS_DIR = os.path.join(os.path.dirname(__file__), "..", "docs")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Mode A — aggregate decomposition from existing result JSONs
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _load_results():
+    rows = []
+    for path in sorted(glob.glob(os.path.join(RESULTS_DIR, "*.json"))):
+        base = os.path.basename(path)
+        if base.startswith("resmarg"):
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            r = json.load(f)
+        d = r.get("depth") or {}
+        if "d1" not in d or "d1_ssi" not in d:
+            continue
+        if r.get("gt_cam_prompted"):
+            continue
+        rows.append({
+            "dataset": r.get("dataset", "?"),
+            "variant": r.get("variant", "default"),
+            "model": r.get("model", "?"),
+            "n": r.get("num_images", 0),
+            "file": base,
+            "d1": d["d1"], "d1_si": d.get("d1_si"), "d1_ssi": d["d1_ssi"],
+            "arel": d.get("arel"), "arel_si": d.get("arel_si"),
+            "arel_ssi": d.get("arel_ssi"),
+        })
+    return rows
+
+
+def mode_results():
+    rows = _load_results()
+    if not rows:
+        raise SystemExit("no usable results_bench JSONs found")
+    for r in rows:
+        r["gap_ssi"] = r["d1_ssi"] - r["d1"]
+        r["gap_si"] = (r["d1_si"] - r["d1"]) if r["d1_si"] is not None else None
+        # share of the full scale+shift headroom closed by a single scalar
+        r["scalar_closure"] = (
+            r["gap_si"] / r["gap_ssi"] if r["gap_si"] is not None and r["gap_ssi"] > 1e-6
+            else None)
+    rows.sort(key=lambda r: (r["dataset"], r["variant"], -r["gap_ssi"]))
+
+    csv_path = os.path.join(RESULTS_DIR, "scale_gap.csv")
+    keys = ["dataset", "variant", "model", "n", "d1", "d1_si", "d1_ssi",
+            "gap_si", "gap_ssi", "scalar_closure", "arel", "arel_si", "arel_ssi", "file"]
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=keys)
+        w.writeheader()
+        w.writerows({k: r.get(k) for k in keys} for r in rows)
+
+    def fmt(v, nd=3):
+        return "" if v is None else f"{v:.{nd}f}"
+
+    lines = [
+        "# Scale-gap decomposition (auto-generated — do not hand-edit)",
+        "",
+        "Source: results_bench/*.json aggregate metrics (official-mirror protocol;",
+        "gtcam rows excluded). `gap_ssi` = d1_ssi − d1 = headroom of a per-image",
+        "scale+shift oracle; `gap_si` = d1_si − d1 = headroom of a per-image median",
+        "SCALAR alone; `scalar_closure` = gap_si / gap_ssi (how much of the",
+        "low-dimensional error is captured by ONE scalar). Generated by",
+        "`python -m benchmark.scale_gap --from-results`.",
+        "",
+        "| dataset | variant | model | n | d1 | d1_si | d1_ssi | gap_si | gap_ssi | scalar closure | arel | arel_si | arel_ssi |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        lines.append(
+            f"| {r['dataset']} | {r['variant']} | {r['model']} | {r['n']} | "
+            f"{fmt(r['d1'])} | {fmt(r['d1_si'])} | {fmt(r['d1_ssi'])} | "
+            f"{fmt(r['gap_si'])} | {fmt(r['gap_ssi'])} | {fmt(r['scalar_closure'], 2)} | "
+            f"{fmt(r['arel'])} | {fmt(r['arel_si'])} | {fmt(r['arel_ssi'])} |")
+    md_path = os.path.join(DOCS_DIR, "SCALE_GAP.md")
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(f"wrote {csv_path}")
+    print(f"wrote {md_path}")
+    # console headline: worst gaps
+    print("\nTop scale gaps (d1_ssi - d1):")
+    for r in rows[:0] or sorted(rows, key=lambda x: -x["gap_ssi"])[:10]:
+        print(f"  {r['dataset']:6s} {r['model']:24s} d1 {r['d1']:.3f} -> si {fmt(r['d1_si'])} "
+              f"-> ssi {r['d1_ssi']:.3f}   gap {r['gap_ssi']*100:.1f}pt "
+              f"(scalar closes {fmt(r['scalar_closure'],2)})")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Mode B — per-image fitted corrections + K-predictability probe
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _fit_log_affine(g: np.ndarray, p: np.ndarray):
+    """min_{a,b} ||a*log p + b - log g||^2 (the affine-head family)."""
+    lp, lg = np.log(p), np.log(g)
+    A = np.stack([lp, np.ones_like(lp)], axis=1)
+    ata = A.T @ A + 1e-9 * np.eye(2)
+    ab = np.linalg.inv(ata) @ (A.T @ lg[:, None])
+    return float(ab[0, 0]), float(ab[1, 0])
+
+
+def _d1(g, p):
+    return float((np.maximum(g / p, p / g) < 1.25).mean())
+
+
+def _arel(g, p):
+    return float((np.abs(g - p) / g).mean())
+
+
+def mode_probe(args):
+    import cv2
+    import torch  # noqa: F401  (device selection inside run_bench.build_model)
+    from benchmark.run_bench import build_model
+    from benchmark.datasets_tier1 import LOADERS
+
+    device = "cuda" if __import__("torch").cuda.is_available() else "cpu"
+    model = build_model(args.model, device, use_gt_cam=False, res_level=args.res_level)
+    loader_kwargs = {}
+    if args.variant:
+        loader_kwargs["variant"] = args.variant
+    # with a stride, iterate the FULL split and subsample (SUN alltest is grouped
+    # by sensor, so a head-`limit` sees a single camera); limit then caps KEPT rows
+    if args.limit and args.stride <= 1:
+        loader_kwargs["limit"] = args.limit
+
+    rows = []
+    subsamples = []
+    kept = 0
+    for i, sample in enumerate(LOADERS[args.dataset](**loader_kwargs)):
+        if args.stride > 1 and i % args.stride:
+            continue
+        if args.limit and kept >= args.limit:
+            break
+        kept += 1
+        gt, valid, K = sample.gt, sample.valid, sample.K
+        h, w = gt.shape
+        out = model.predict(sample.rgb, K)
+        pred = out["depth"]
+        if pred.shape != (h, w):
+            pred = cv2.resize(pred, (w, h), interpolation=cv2.INTER_LINEAR)
+        m = valid.astype(bool)
+        if sample.max_depth is not None:
+            m = m & (gt <= sample.max_depth)
+        if m.sum() < 50:
+            continue
+        g = gt[m].astype(np.float64)
+        p = np.clip(pred[m].astype(np.float64), 1e-6, None)
+
+        b_shift = float(np.mean(np.log(g) - np.log(p)))          # logshift scalar
+        a_aff, b_aff = _fit_log_affine(g, p)                     # logaffine pair
+        p_si = np.clip(protocol.si_align(g, p), 1e-6, None)      # official scalar
+        p_shift = p * np.exp(b_shift)
+        p_aff = np.exp(a_aff * np.log(p) + b_aff)
+
+        # pixel subsample retained for post-hoc GLOBAL (dataset-level) corrections
+        rng = np.random.default_rng(i)
+        sel = rng.choice(g.size, min(2000, g.size), replace=False)
+        subsamples.append((g[sel], p[sel]))
+
+        rows.append({
+            "idx": i,
+            "fx_n": float(K[0, 0] / w) if K is not None else float("nan"),
+            "fy_n": float(K[1, 1] / h) if K is not None else float("nan"),
+            "b_shift": b_shift, "a_aff": a_aff, "b_aff": b_aff,
+            "d1_raw": _d1(g, p), "d1_si": _d1(g, p_si),
+            "d1_logshift": _d1(g, p_shift), "d1_logaffine": _d1(g, p_aff),
+            "arel_raw": _arel(g, p), "arel_si": _arel(g, p_si),
+            "arel_logshift": _arel(g, p_shift), "arel_logaffine": _arel(g, p_aff),
+            "gt_med": float(np.median(g)),
+        })
+        if kept % 50 == 0:
+            print(f"  {kept} images (scan {i + 1})", flush=True)
+
+    if not rows:
+        raise SystemExit("no images evaluated")
+    var = f"-{args.variant}" if args.variant else ""
+    stag = f"__stride{args.stride}" if args.stride > 1 else ""
+    out_csv = os.path.join(
+        RESULTS_DIR, f"scalegap_probe__{args.dataset}{var}__{model.name}{stag}.csv")
+    with open(out_csv, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+    def col(k):
+        return np.asarray([r[k] for r in rows], dtype=np.float64)
+
+    summary = {
+        "dataset": args.dataset, "variant": args.variant or "default",
+        "model": model.name, "n": len(rows),
+        "d1_raw": float(col("d1_raw").mean()),
+        "d1_si": float(col("d1_si").mean()),
+        "d1_logshift": float(col("d1_logshift").mean()),
+        "d1_logaffine": float(col("d1_logaffine").mean()),
+        "arel_raw": float(col("arel_raw").mean()),
+        "arel_logshift": float(col("arel_logshift").mean()),
+        "arel_logaffine": float(col("arel_logaffine").mean()),
+        "b_shift_mean": float(col("b_shift").mean()),
+        "b_shift_std": float(col("b_shift").std()),
+        "a_aff_mean": float(col("a_aff").mean()),
+    }
+    # ONE dataset-level scalar (mean b over images) applied to every image:
+    # separates the domain-systematic component (camera/domain-driven, learnable
+    # without per-image evidence) from per-image scene ambiguity (needs anchors).
+    b_global = summary["b_shift_mean"]
+    d1_g, arel_g, d1_raw_sub = [], [], []
+    for gs, ps in subsamples:
+        pg = ps * np.exp(b_global)
+        d1_g.append(_d1(gs, pg))
+        arel_g.append(_arel(gs, pg))
+        d1_raw_sub.append(_d1(gs, ps))
+    summary["d1_globalshift"] = float(np.mean(d1_g))
+    summary["arel_globalshift"] = float(np.mean(arel_g))
+    summary["d1_raw_subsample_check"] = float(np.mean(d1_raw_sub))
+    # K-predictability: does the needed log-scale correlate with focal length?
+    fy = col("fy_n")
+    b = col("b_shift")
+    if np.isfinite(fy).all() and np.unique(fy).size > 3:
+        try:
+            from scipy.stats import pearsonr, spearmanr
+            pr = pearsonr(np.log(fy), b)
+            sr = spearmanr(np.log(fy), b)
+            summary["corr_b_vs_logfy_pearson"] = float(pr[0])
+            summary["corr_b_vs_logfy_pearson_p"] = float(pr[1])
+            summary["corr_b_vs_logfy_spearman"] = float(sr[0])
+        except Exception:
+            pass
+    else:
+        summary["corr_b_vs_logfy_pearson"] = None  # constant-K dataset
+
+    out_json = out_csv.replace(".csv", ".json")
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    print(json.dumps(summary, indent=2))
+    print(f"wrote {out_csv}")
+    print(f"wrote {out_json}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--from-results", action="store_true")
+    ap.add_argument("--probe", action="store_true")
+    ap.add_argument("--dataset", default=None)
+    ap.add_argument("--variant", default="")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--stride", type=int, default=1,
+                    help="probe: keep every Nth image of the full split")
+    ap.add_argument("--model", default=None)
+    ap.add_argument("--res-level", type=int, default=None)
+    args = ap.parse_args()
+    if args.from_results:
+        mode_results()
+    elif args.probe:
+        if not (args.dataset and args.model):
+            raise SystemExit("--probe needs --dataset and --model")
+        mode_probe(args)
+    else:
+        raise SystemExit("pick --from-results or --probe")
+
+
+if __name__ == "__main__":
+    main()
