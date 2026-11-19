@@ -1,0 +1,24 @@
+# Install into an ISOLATED conda env so nothing here can disturb the base env AidGPT uses:
+#
+#   conda create -n depth python=3.11 -y
+#   conda activate depth
+#
+# torch/torchvision MUST be a Blackwell-capable build for the RTX 5070 Ti (sm_120). Use cu128:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# (verified working: torch 2.11.0+cu128, device capability (12, 0), GPU matmul OK)
+#
+# UniDepth v2 — install WITHOUT its deps so it can't pin torch or pull xformers (no wheel for
+# torch-2.11/cu128; UniDepth v2 runs fine on native attention without it):
+#   pip install --no-deps "git+https://github.com/lpiccinelli-eth/UniDepth.git"
+#
+# Everything else (this file):
+numpy
+pillow
+opencv-python
+pyyaml
+tqdm
+scipy
+pandas
+einops
+huggingface_hub
+timm>=1.0.0

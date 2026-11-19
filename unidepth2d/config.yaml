@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# unidepth2d configuration. All paths absolute so the pipeline runs from anywhere.
+# ─────────────────────────────────────────────────────────────────────────────
+
+data:
+  root: "C:/Tim/nature/database/Fianl Version"
+  images_dir: "C:/Tim/nature/database/Fianl Version/images"
+  # Frozen detection source. Two supported layouts (see common/io_utils.py):
+  #   detection_ensemble  -> per-image JSON under .../metadata with bbox_xyxy + class_name + w/h
+  #   yolo_txt            -> per-image YOLO txt (class cx cy w h, normalized) + a classes file
+  detection_source: "detection_ensemble"
+  detection_ensemble_metadata: "C:/Tim/nature/database/Fianl Version/Detection/Detection_ensemble_conf040/metadata"
+  yolo_labels_dir: "C:/Tim/nature/database/Fianl Version/labels"
+  yolo_classes_file: ""                      # optional; if empty, class ids are kept as integers
+  image_exts: [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
+
+teacher:
+  # UniDepth v2 checkpoints tried in order until one loads (accuracy first — this is offline).
+  checkpoints:
+    - "lpiccinelli/unidepth-v2-vitl14"
+    - "lpiccinelli/unidepth-v2-vitb14"
+    - "lpiccinelli/unidepth-v2-vits14"
+  device: "cuda"
+  # Resolution UniDepth actually runs at (longer side). Keeps vitl14 inside 12.8 GB VRAM and speeds
+  # the offline pass. Depth is upsampled back to the ORIGINAL resolution before object sampling, so
+  # detection box coordinates need no scaling. 0 = feed original resolution (heaviest).
+  infer_longest_side: 1280
+  # Cap the SAVED depth map's longer side to keep storage sane (full 2560x1440 float32 x 7.7k
+  # would be >100 GB). Object distances are sampled at original resolution BEFORE this cap, so
+  # object distances are unaffected. 0 = no cap (not recommended).
+  save_longest_side: 1024
+  depth_clip_m: 60.0                         # clamp absurd far predictions before mm quantization
+  # Paper's per-object sampling recipe (Distance Perception in VLMs, Sec. III-B).
+  sample_inset_frac: 0.20                    # 4 corner samples inset 20% from each bbox edge
+  uncertainty_std_m: 1.0                     # std across the 5 samples > this -> uncertain flag
+  proximity_warn_m: 1.0                      # objects closer than this get a proximity flag
+  min_box_conf: 0.0                          # ignore detections below this confidence (0 = keep all)
+
+output:
+  root: "C:/Tim/nature/unidepth2d/outputs"
+  depth_dir: "C:/Tim/nature/unidepth2d/outputs/depth_mm"     # 16-bit PNG, millimetres
+  conf_dir: "C:/Tim/nature/unidepth2d/outputs/conf"          # 8-bit PNG, 0-255
+  objects_dir: "C:/Tim/nature/unidepth2d/outputs/objects"    # per-image JSON of object distances
+  manifest_csv: "C:/Tim/nature/unidepth2d/outputs/manifest.csv"
+  run_summary: "C:/Tim/nature/unidepth2d/outputs/run_summary.json"
+
+splits:
+  file: "C:/Tim/nature/unidepth2d/outputs/splits.json"
+  val_frac: 0.10
+  test_frac: 0.05
+  seed: 1234
+
+# Multi-source real-GT + pseudo-label corpus (scripts/build_gt_dataset.py)
+data_gt:
+  root: "C:/Tim/nature/unidepth2d/outputs/data_gt"
+  manifest: "C:/Tim/nature/unidepth2d/outputs/data_gt/manifest.csv"
+  # per-epoch sampling mix for training (normalized internally)
+  mix:
+    own: 0.40
+    nyu: 0.40
+    sun: 0.20
+  samples_per_epoch: 12000   # weighted draws per epoch (0 = full corpus each epoch)
+  val_frac: 0.03          # small val slice carved per-source from the manifest (seeded)
+  seed: 1234
+
+student:
+  backbone: "efficientvit_b1.r224_in1k"      # timm; real-time friendly. b0 for more speed.
+  pretrained_backbone: true
+  decoder_channels: 96
+  train_size: [480, 640]                     # H, W the student trains/infers at (matches GT sources)
+  depth_min_m: 0.2
+  depth_max_m: 30.0                          # student regresses log-depth within this range
+
+distill:
+  device: "cuda"
+  amp: true
+  batch_size: 4                   # 480x640 is ~1.6x the pixels of the old 384x512
+  grad_accum: 3                   # effective batch 12
+  epochs: 40
+  lr: 0.0003
+  weight_decay: 0.01
+  ema_decay: 0.999
+  num_workers: 4
+  # Metric-preserving loss weights (see distill/losses.py). SILog keeps absolute scale;
+  # gradient matching sharpens edges; ssi is an OPTIONAL structure-only term (Distill-Any-Depth
+  # style) — off by default because it discards absolute scale.
+  loss:
+    silog_weight: 1.0
+    silog_lambda: 0.85                       # 0.85 = standard metric setting (keeps most abs scale)
+    grad_weight: 0.5
+    grad_scales: 4
+    ssi_weight: 0.0                          # >0 to add scale-shift-invariant structure term
+  # Confidence-weighted distillation: down-weight pixels where the teacher was unsure.
+  # OFF: UniDepth's confidence is extremely skewed; per-image min-max normalization drove ~all
+  # pixels to ~0, which (as a multiplicative loss weight) starved the student of gradient and
+  # collapsed it to a near-constant output. The loss now floors conf defensively, but keep this
+  # off until confidence storage is rank-normalized.
+  use_teacher_confidence: false
+  # Checkpoint-selection metric: "mixed" | a source name ("own"/"nyu"/"sun").
+  # FAIRNESS (P-series): the val split carries EVERY manifest source regardless of the
+  # training mix (dataset.py builds it per-source), so "mixed" selects the best epoch using
+  # NYU/SUN validation rows even when they are excluded from training — model selection on
+  # eval-domain data is leakage. P-series trains own-only and MUST select on "own".
+  select_metric: "own"
+  checkpoints_dir: "C:/Tim/nature/unidepth2d/outputs/checkpoints"
