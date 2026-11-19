@@ -30,6 +30,8 @@ import cv2
 import numpy as np
 import torch
 
+from bench.refmodel import _check_full_res
+
 
 class V2ppModel:
     def __init__(self, checkpoint: str, device: str = "cuda",
@@ -66,9 +68,9 @@ class V2ppModel:
                 if o.get("confidence") is not None else np.ones_like(depth))
         rays = o["rays"][0].float().cpu().numpy()
         K = o["intrinsics"][0].float().cpu().numpy()
-        if depth.shape != (H, W):
-            depth = cv2.resize(depth, (W, H), interpolation=cv2.INTER_LINEAR)
-            conf = cv2.resize(conf, (W, H), interpolation=cv2.INTER_LINEAR)
+        # infer() already returns full-size maps and K rescaled to them; resizing depth/conf alone
+        # would back-project with a K and rays from the model grid, so mismatches are errors.
+        _check_full_res((H, W), depth=depth, conf=conf, rays=rays)
         return {"depth": depth, "conf": conf, "rays": rays, "K": K}
 
     def _candidates(self, rgb):

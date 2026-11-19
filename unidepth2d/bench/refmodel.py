@@ -12,6 +12,14 @@ import numpy as np
 import torch
 
 
+def _check_full_res(hw, **maps) -> None:
+    """Raise if any (…,H,W) map is not at the original image size ``hw``."""
+    bad = {k: tuple(v.shape) for k, v in maps.items() if v is not None and tuple(v.shape[-2:]) != tuple(hw)}
+    if bad:
+        raise ValueError(f"UniDepth outputs not at input size {tuple(hw)}: {bad}; "
+                         "rays/points/K would not match a resized depth")
+
+
 class V2Model:
     """Official UniDepthV2 (frozen). resolution_level fixed here; the V2++ wrapper overrides it."""
 
@@ -37,8 +45,10 @@ class V2Model:
         rays = out["rays"][0].float().cpu().numpy()              # (3,H,W)
         conf = out["confidence"][0, 0].float().cpu().numpy() if out.get("confidence") is not None else None
         K = out["intrinsics"][0].float().cpu().numpy()
-        if depth.shape != (H, W):
-            depth = cv2.resize(depth, (W, H), interpolation=cv2.INTER_LINEAR)
+        # UniDepthV2.infer returns every map at the input size and K rescaled to it. Resizing
+        # depth alone would pair it with grid-size rays/points and a mismatched K (wrong rho_A and
+        # F_A), so a size mismatch is an error, never a silent resize.
+        _check_full_res((H, W), depth=depth, points=points, rays=rays, conf=conf)
         return {"depth_m": depth, "points": points, "rays": rays, "conf": conf, "K": K}
 
 

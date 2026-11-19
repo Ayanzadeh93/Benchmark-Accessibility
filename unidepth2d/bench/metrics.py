@@ -113,22 +113,28 @@ def backproject(depth: torch.Tensor, K: torch.Tensor) -> torch.Tensor:
 
 # Official eval_3d downsamples the cloud before chamfer ("rescale to avoid OOM"). Chamfer is
 # O(N^2), so we cap N to keep F_A fast. 20k points give a stable chamfer-F1 estimate and, crucially,
-# F_A is computed with the SAME cap for every model -> the surpass COMPARISON is exact even if the
-# absolute F_A differs slightly from the paper's ~76.8k-point / Pytorch3D value. (Set higher for a
-# closer-to-paper absolute at O(N^2) cost.)
+# F_A is computed with the SAME cap AND the SAME pixel subset for every model: the subset is drawn
+# from the GT-valid mask with a fixed-seed generator, so it depends only on the image, not on the
+# model or the run. The absolute F_A can differ slightly from the paper's ~76.8k-point / Pytorch3D
+# value. (Set higher for a closer-to-paper absolute at O(N^2) cost.)
 _F1_MAX_POINTS = 20000
 
 
 def f1_3d(gt_pts: torch.Tensor, pred_pts: torch.Tensor, mask: torch.Tensor,
-          max_depth: float, n_thresh: int = 20, max_points: int = _F1_MAX_POINTS) -> float:
+          max_depth: float, n_thresh: int = 20, max_points: int = _F1_MAX_POINTS,
+          seed: int = 0) -> float:
     """F_A: AUC of chamfer-F1 over thresholds up to (max_depth/20)^2 (squared, matching the
-    official squared-distance comparison). gt_pts/pred_pts: (3,H,W); mask: (H,W)."""
+    official squared-distance comparison). gt_pts/pred_pts: (3,H,W); mask: (H,W).
+
+    When more than ``max_points`` pixels are valid, a subset is drawn with a CPU generator seeded
+    by ``seed``: identical for every model scored on the same mask, and identical across runs."""
     m = mask.reshape(-1)
     idx = torch.nonzero(m, as_tuple=False).squeeze(1)
     if idx.numel() < 10:
         return float("nan")
     if idx.numel() > max_points:
-        sel = torch.randperm(idx.numel(), device=idx.device)[:max_points]
+        gen = torch.Generator(device="cpu").manual_seed(int(seed))
+        sel = torch.randperm(idx.numel(), generator=gen)[:max_points].to(idx.device)
         idx = idx[sel]
     g = gt_pts.reshape(3, -1)[:, idx].T.contiguous()      # (N,3)
     p = pred_pts.reshape(3, -1)[:, idx].T.contiguous()
