@@ -1,0 +1,43 @@
+{
+  "dataset": "ibims",
+  "variant": "default",
+  "model": "student-b1_mix+w6",
+  "num_images": 100,
+  "protocol": "official-mirror v1 (protocol.py, no pred clip, per-image mean)",
+  "gt_cam_prompted": false,
+  "date": "2026-11-16 19:00",
+  "depth": {
+    "d1": 0.52645,
+    "d2": 0.83574,
+    "d3": 0.96345,
+    "rmse": 1.06598,
+    "rmselog": 0.28909,
+    "arel": 0.23404,
+    "sqrel": 0.32115,
+    "log10": 0.11158,
+    "silog": 15.8241,
+    "medianlog": 23.53972,
+    "d_auc": 0.76997,
+    "tau": 0.05977,
+    "n_nonpos_pred": 0.0,
+    "tau_ssi": 0.23945,
+    "tau_si": 0.20399,
+    "d1_ssi": 0.88954,
+    "d1_si": 0.84302,
+    "arel_ssi": 0.1096,
+    "arel_si": 0.12889
+  },
+  "f3d": null,
+  "rho_a": null,
+  "uncertainty": null,
+  "boundary_f1_si": 0.04606633244434532,
+  "quantization": {
+    "bits": 6,
+    "per_channel": true,
+    "params_quantized": 5094240,
+    "params_float": 24737,
+    "size_mb": 3.92,
+    "size_mb_fp32": 20.476,
+    "weight_rel_rmse": 0.031213887253847848
+  }
+}

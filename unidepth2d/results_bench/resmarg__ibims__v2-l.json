@@ -1,0 +1,58 @@
+{
+  "dataset": "ibims",
+  "model": "v2-l",
+  "mode": "official",
+  "levels": [
+    3,
+    6,
+    9
+  ],
+  "num_images": 100,
+  "compute": {
+    "per_level_ms": {
+      "L3": 81.98,
+      "L6": 110.7,
+      "L9": 137.9
+    },
+    "fused_ms": 330.58,
+    "n_passes": 3
+  },
+  "metrics": {
+    "L3": {
+      "d1": 0.93768,
+      "arel": 0.08669,
+      "silog": 5.82768,
+      "medianlog": 7.34809,
+      "boundary_f1": 0.16
+    },
+    "L6": {
+      "d1": 0.93614,
+      "arel": 0.0881,
+      "silog": 5.85497,
+      "medianlog": 7.67042,
+      "boundary_f1": 0.17225
+    },
+    "L9": {
+      "d1": 0.94587,
+      "arel": 0.08482,
+      "silog": 5.80684,
+      "medianlog": 7.2738,
+      "boundary_f1": 0.17813
+    },
+    "fuse_uniform": {
+      "d1": 0.9451,
+      "arel": 0.08591,
+      "silog": 5.76164,
+      "medianlog": 7.37249,
+      "boundary_f1": 0.17093
+    },
+    "fuse_prec": {
+      "d1": 0.94518,
+      "arel": 0.08592,
+      "silog": 5.77579,
+      "medianlog": 7.37133,
+      "boundary_f1": 0.17111
+    }
+  },
+  "boundary_f1_gain_vs_best_single": -0.007
+}

@@ -1,0 +1,22 @@
+{
+  "dataset": "ibims",
+  "variant": "default",
+  "model": "student-S19_sced",
+  "n": 100,
+  "d1_raw": 0.6894238730317076,
+  "d1_si": 0.8843529453860495,
+  "d1_logshift": 0.8989987156280317,
+  "d1_logaffine": 0.9347684181821277,
+  "arel_raw": 0.1865086377418227,
+  "arel_logshift": 0.0995481645849388,
+  "arel_logaffine": 0.08049129573293676,
+  "b_shift_mean": 0.06440407993009087,
+  "b_shift_std": 0.19448919723481953,
+  "a_aff_mean": 1.1135298845125579,
+  "d1_globalshift": 0.738975,
+  "arel_globalshift": 0.1830530535666988,
+  "d1_raw_subsample_check": 0.6891700000000001,
+  "corr_b_vs_logfy_pearson": -0.15935758732401456,
+  "corr_b_vs_logfy_pearson_p": 0.11326680704134272,
+  "corr_b_vs_logfy_spearman": 0.04762343596821593
+}

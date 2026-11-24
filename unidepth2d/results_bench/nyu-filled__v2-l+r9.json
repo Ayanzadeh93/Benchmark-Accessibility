@@ -1,0 +1,42 @@
+{
+  "dataset": "nyu",
+  "variant": "filled",
+  "model": "v2-l+r9",
+  "num_images": 654,
+  "protocol": "official-mirror v1 (protocol.py, no pred clip, per-image mean)",
+  "gt_cam_prompted": false,
+  "date": "2026-11-23 13:36",
+  "depth": {
+    "d1": 0.94323,
+    "d2": 0.98413,
+    "d3": 0.99245,
+    "rmse": 0.35743,
+    "mae": 0.23531,
+    "rmselog": 0.11504,
+    "arel": 0.08595,
+    "sqrel": 0.06894,
+    "log10": 0.03599,
+    "silog": 8.56876,
+    "medianlog": 5.7118,
+    "d_auc": 0.9261,
+    "tau": 0.29412,
+    "n_nonpos_pred": 0.0,
+    "tau_ssi": 0.62865,
+    "tau_si": 0.57108,
+    "d1_ssi": 0.95883,
+    "d1_si": 0.9622,
+    "arel_ssi": 0.04932,
+    "arel_si": 0.05234
+  },
+  "f3d": {
+    "F1": 0.82479,
+    "chamfer": 0.12255
+  },
+  "rho_a": 0.9277905198776758,
+  "uncertainty": {
+    "ause": 0.03282,
+    "nause": 0.75423,
+    "spearman": 0.1146
+  },
+  "boundary_f1_si": null
+}

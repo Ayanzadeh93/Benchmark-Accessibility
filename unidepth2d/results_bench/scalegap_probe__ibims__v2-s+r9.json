@@ -1,0 +1,22 @@
+{
+  "dataset": "ibims",
+  "variant": "default",
+  "model": "v2-s+r9",
+  "n": 100,
+  "d1_raw": 0.8252678588816872,
+  "d1_si": 0.9617934735305596,
+  "d1_logshift": 0.9746447695075414,
+  "d1_logaffine": 0.9793273755565386,
+  "arel_raw": 0.14158914190513103,
+  "arel_logshift": 0.051639903712433766,
+  "arel_logaffine": 0.04081420372850591,
+  "b_shift_mean": -0.004825101702904775,
+  "b_shift_std": 0.17410167778467425,
+  "a_aff_mean": 0.9981523581721506,
+  "d1_globalshift": 0.824495,
+  "arel_globalshift": 0.1408829322020499,
+  "d1_raw_subsample_check": 0.8251649999999999,
+  "corr_b_vs_logfy_pearson": -0.14621025652673938,
+  "corr_b_vs_logfy_pearson_p": 0.14663144186319255,
+  "corr_b_vs_logfy_spearman": 0.09460526980039764
+}

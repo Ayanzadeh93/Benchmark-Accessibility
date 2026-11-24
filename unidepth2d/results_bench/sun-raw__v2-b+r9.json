@@ -1,0 +1,41 @@
+{
+  "dataset": "sun",
+  "variant": "raw",
+  "model": "v2-b+r9",
+  "num_images": 4396,
+  "protocol": "official-mirror v1 (protocol.py, no pred clip, per-image mean)",
+  "gt_cam_prompted": false,
+  "date": "2026-07-19 02:12",
+  "depth": {
+    "d1": 0.92539,
+    "d2": 0.98846,
+    "d3": 0.99612,
+    "rmse": 0.28083,
+    "rmselog": 0.11721,
+    "arel": 0.09672,
+    "sqrel": 0.04819,
+    "log10": 0.04015,
+    "silog": 7.64601,
+    "medianlog": 7.55206,
+    "d_auc": 0.91719,
+    "tau": 0.2454,
+    "n_nonpos_pred": 0.0,
+    "tau_ssi": 0.62672,
+    "tau_si": 0.579,
+    "d1_ssi": 0.97751,
+    "d1_si": 0.97306,
+    "arel_ssi": 0.04134,
+    "arel_si": 0.04644
+  },
+  "f3d": {
+    "F1": 0.79347,
+    "chamfer": 0.12269
+  },
+  "rho_a": 0.8791856232939037,
+  "uncertainty": {
+    "ause": 0.03807,
+    "nause": 0.94346,
+    "spearman": 0.09283
+  },
+  "boundary_f1_si": null
+}

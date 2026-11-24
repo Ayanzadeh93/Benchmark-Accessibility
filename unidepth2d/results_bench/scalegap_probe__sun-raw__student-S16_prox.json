@@ -1,0 +1,17 @@
+{
+  "dataset": "sun",
+  "variant": "raw",
+  "model": "student-S16_prox",
+  "n": 500,
+  "d1_raw": 0.9182456823935097,
+  "d1_si": 0.9439468673834901,
+  "d1_logshift": 0.9516952189129286,
+  "d1_logaffine": 0.9631843700730014,
+  "arel_raw": 0.09051660180402808,
+  "arel_logshift": 0.0712452638174613,
+  "arel_logaffine": 0.0623693720753007,
+  "b_shift_mean": 0.019075892428604788,
+  "b_shift_std": 0.07426190366421538,
+  "a_aff_mean": 1.0764863880904274,
+  "corr_b_vs_logfy_pearson": null
+}

@@ -1,0 +1,38 @@
+{
+  "dataset": "ibims",
+  "variant": "default",
+  "model": "moge2-s+r9",
+  "num_images": 100,
+  "protocol": "official-mirror v1 (protocol.py, no pred clip, per-image mean)",
+  "gt_cam_prompted": false,
+  "date": "2026-11-23 12:49",
+  "depth": {
+    "d1": 0.63696,
+    "d2": 0.94259,
+    "d3": 0.98976,
+    "rmse": 0.67227,
+    "mae": 0.58673,
+    "rmselog": 0.2107,
+    "arel": 0.17441,
+    "sqrel": 0.15123,
+    "log10": 0.08464,
+    "silog": 7.95363,
+    "medianlog": 18.18887,
+    "d_auc": 0.82538,
+    "tau": 0.08611,
+    "n_nonpos_pred": 0.0,
+    "tau_ssi": 0.59155,
+    "tau_si": 0.46391,
+    "d1_ssi": 0.97784,
+    "d1_si": 0.9602,
+    "arel_ssi": 0.04378,
+    "arel_si": 0.05875
+  },
+  "f3d": {
+    "F1": 0.58453,
+    "chamfer": 0.32286
+  },
+  "rho_a": 0.6543,
+  "uncertainty": null,
+  "boundary_f1_si": 0.19186411630740496
+}
