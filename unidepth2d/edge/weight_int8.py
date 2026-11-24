@@ -13,7 +13,8 @@ CONTRACT
   * Quantization is symmetric, restricted range: q = clip(round(w / s), -127, 127) with
     s = max|w_channel| / 127; an all-zero channel gets s = 1 (q = 0, so it dequantizes to 0).
     This is the same grid as edge/quant_sim.py (8 bits, per channel), so the simulated and the
-    ONNX W8 numbers are directly comparable.
+    ONNX W8 numbers are directly comparable -- for b20 rep4 students only because both act on
+    the FUSED convs (export_onnx fuses before export; run_bench's q:<bits> fuses on load).
   * Output-channel axis: Conv 0, ConvTranspose 1, Gemm transB=0 -> 1 / transB=1 -> 0, MatMul 1.
   * Requires opset >= 13 (per-axis DequantizeLinear). Activations stay float: this is a SIZE
     option, not a speed option (plan E10: it ran slower than fp32 on x86).
@@ -35,6 +36,14 @@ import numpy as np
 QMAX = 127
 DEFAULT_OPS = ("Conv", "ConvTranspose", "Gemm", "MatMul")
 _SUFFIX_Q, _SUFFIX_S, _SUFFIX_Z, _SUFFIX_DQ = "_q8", "_s8", "_z8", "_dq8"
+# b20 dsh: the decoupled scale head stays float (spec section 2, supporting change 4). Matched on
+# the initializer name and the consuming node name (the exporters keep "scale_mlp"/"k_embed").
+FLOAT_KEEP_KEYS = ("scale_mlp", "k_embed")
+
+
+def _keep_float(name: str, uses) -> bool:
+    return any(k in name for k in FLOAT_KEEP_KEYS) or any(
+        k in (n.name or "") for n, _ in uses for k in FLOAT_KEEP_KEYS)
 
 
 def _attr(node, name, default):
@@ -108,7 +117,7 @@ def quantize_weights_int8(src, dst: Optional[str] = None, op_types: Iterable[str
         if init.data_type != onnx.TensorProto.FLOAT or name in graph_outputs:
             continue
         uses = consumers.get(name, [])
-        if not uses:
+        if not uses or _keep_float(name, uses):
             continue
         axes = set()
         ok = True

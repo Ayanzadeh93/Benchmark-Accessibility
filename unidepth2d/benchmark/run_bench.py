@@ -84,7 +84,7 @@ class StudentModelRunner:
     """Registry student: fixed train-size inference, bilinear upsample (deploy mode)."""
 
     def __init__(self, ckpt_path: str, device: str):
-        from distill.student import build_student
+        from distill.student import build_student, needs_intrinsics
         from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
         ck = torch.load(ckpt_path, map_location=device, weights_only=False)
         cfg = ck["cfg"]
@@ -92,7 +92,16 @@ class StudentModelRunner:
         self.model.load_state_dict(ck["model"])
         s = cfg["student"]
         self.th, self.tw = int(s["train_size"][0]), int(s["train_size"][1])
-        self.use_intr = bool(s.get("use_intrinsics", False)) or bool(s.get("ray_map", False))
+        self.use_intr = needs_intrinsics(s)
+        # b20 rep4: evaluate the FUSED deploy graph (what ONNX / Core ML ship), so student: and
+        # q:<bits> (which quantises self.model's Conv weights) measure the shipped convs, not the
+        # separate DW3x3 / DW1x1 / PW1x1 training branches. No-op (no forward, no RNG) otherwise.
+        from distill.rep import fuse_with_parity, has_unfused_rep
+        if has_unfused_rep(self.model):
+            g = torch.Generator().manual_seed(0)
+            x = torch.randn(1, 3, self.th, self.tw, generator=g).to(device)
+            k = torch.tensor([[0.8, 1.08, 0.5, 0.5]], device=device) if self.use_intr else None
+            fuse_with_parity(self.model, x, k)
         self.mean, self.std = IMAGENET_MEAN, IMAGENET_STD
         self.device = device
         parent = os.path.basename(os.path.dirname(ckpt_path))

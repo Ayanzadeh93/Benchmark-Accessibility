@@ -21,7 +21,7 @@ import torch
 from common import depth_ops as D
 from common.io_utils import load_config, parse_yolo_txt
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import build_student, needs_intrinsics
 
 
 def load_student(cfg, ckpt_path, device):
@@ -29,7 +29,7 @@ def load_student(cfg, ckpt_path, device):
     cfg_model = ck.get("cfg", cfg)
     model = build_student(cfg_model).to(device).eval()
     model.load_state_dict(ck["model"])
-    use_intr = bool(cfg_model["student"].get("use_intrinsics", False))
+    use_intr = needs_intrinsics(cfg_model["student"], legacy_ray=False)
     intr_map = {}
     if use_intr:
         p = os.path.join(cfg["output"]["root"], "intrinsics.json")

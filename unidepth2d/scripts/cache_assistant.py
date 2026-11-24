@@ -19,7 +19,7 @@ import torch
 
 from common.io_utils import load_config
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import build_student, needs_intrinsics
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
     model.load_state_dict(ck["model"])
     s = cfg_m["student"]
     th, tw = int(s["train_size"][0]), int(s["train_size"][1])
-    use_intr = bool(s.get("use_intrinsics", False))
+    use_intr = needs_intrinsics(s, legacy_ray=False)
     default_intr = torch.tensor([[0.8, 1.08, 0.5, 0.5]], dtype=torch.float32, device=device)
 
     root = cfg["data_gt"]["root"]

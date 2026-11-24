@@ -23,6 +23,9 @@ import torch
 import torch.nn as nn
 
 QUANT_TYPES = (nn.Conv2d, nn.Linear, nn.ConvTranspose2d)
+# b20 dsh: the decoupled scale head (~64k params) stays float under weight-only quantisation
+# (spec section 2, supporting change 4). Students without these modules are unaffected.
+FLOAT_KEEP_PREFIXES = ("scale_mlp", "k_embed")
 
 
 def quantize_tensor(w: torch.Tensor, bits: int = 8, per_channel: bool = True,
@@ -56,7 +59,9 @@ def quantize_weights_(model: nn.Module, bits: int = 8, per_channel: bool = True)
     n_q = n_fp = 0
     rel_err_num = rel_err_den = 0.0
     seen = set()
-    for mod in model.modules():
+    for name, mod in model.named_modules():
+        if any(part in FLOAT_KEEP_PREFIXES for part in name.split(".")):
+            continue                                      # b20 scale head stays float
         if isinstance(mod, QUANT_TYPES) and id(mod.weight) not in seen:
             seen.add(id(mod.weight))
             w = mod.weight

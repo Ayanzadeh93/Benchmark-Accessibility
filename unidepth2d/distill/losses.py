@@ -113,12 +113,17 @@ def eg_ssi_loss(
     target_log: torch.Tensor,
     mask: torch.Tensor,
     edge_floor: float = 0.2,
+    pad: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """Edge-guided scale-shift-invariant L1 (aux term, after UniDepth v2's L_EG-SSI).
 
     Structure-only supervision concentrated on depth discontinuities of the TARGET: an edge map
     (Sobel magnitude of target log-depth, per-image max-normalized) reweights an SSI-normalized L1.
     Scale-free by construction — keep it auxiliary next to the metric SILog anchor.
+
+    b20 fov/ownar: ``pad`` (B,1,H,W, 1 = synthetic pad) zeroes the edge response on and next to
+    the pad BEFORE max-normalisation, so the 0-filled target at a pad border cannot create a
+    spurious edge that dominates ``emax``. pad=None is exactly the previous behaviour.
     """
     with torch.no_grad():
         sx = _SOBEL_X.to(target_log.device, target_log.dtype)
@@ -127,6 +132,9 @@ def eg_ssi_loss(
         gx = F.conv2d(t, sx, padding=1)
         gy = F.conv2d(t, sy, padding=1)
         edge = (gx.abs() + gy.abs())
+        if pad is not None:
+            pd = F.max_pool2d(pad.to(edge.dtype), kernel_size=3, stride=1, padding=1)
+            edge = edge * (1.0 - pd)
         emax = edge.flatten(1).max(dim=1).values.clamp(min=1e-6).view(-1, 1, 1, 1)
         edge_w = edge_floor + (1.0 - edge_floor) * (edge / emax).clamp(0, 1)
     pn = _ssi_normalize(pred_log, mask)
@@ -432,6 +440,96 @@ def icd_consistency_loss(
     return ((pred_log - pred_log_ref).abs() * w).sum() / w.sum().clamp(min=1.0)
 
 
+DSH_MIN_VALID = 500     # images with fewer valid pixels get scale-loss weight 0
+
+
+@torch.no_grad()
+def dsh_scale_target(
+    r_up: torch.Tensor,
+    c: torch.Tensor,
+    target_log: torch.Tensor,
+    valid: torch.Tensor,
+    min_valid: int = DSH_MIN_VALID,
+    fallback: Optional[torch.Tensor] = None,
+):
+    """b20 C1: stop-grad per-image scale target, in fp32.
+
+        s* = median_{p in valid} [ log D(p) - U(r_c)(p) - c ]
+
+    r_up: (B,1,H,W) mean-centred structure (upsampled); c: (B,1) cstm term (zeros if off);
+    target_log/valid: (B,1,H,W). Returns (s_star (B,1), ok (B,) bool). Rows with fewer than
+    ``min_valid`` valid pixels get ok=False and s* = ``fallback`` (e.g. s_hat.detach()) or 0."""
+    B = r_up.shape[0]
+    res = target_log.float() - r_up.float() - c.float().view(B, 1, 1, 1)
+    v = valid.bool()
+    res = torch.where(v, res, torch.full_like(res, float("nan"))).view(B, -1)
+    s_star = torch.nanmedian(res, dim=1).values.view(B, 1)
+    ok = v.view(B, -1).sum(dim=1) >= int(min_valid)
+    fb = fallback.detach().float().view(B, 1) if fallback is not None else torch.zeros_like(s_star)
+    s_star = torch.where(ok.view(B, 1) & torch.isfinite(s_star), s_star, fb)
+    return s_star.detach(), ok
+
+
+def scale_head_loss(s_hat: torch.Tensor, s_star: torch.Tensor, ok: torch.Tensor,
+                    beta: float = 0.05) -> torch.Tensor:
+    """b20 C1: mean_b SmoothL1_beta(s_hat_b - s*_b) over rows with ok=True (fp32)."""
+    l = F.smooth_l1_loss(s_hat.float().view(-1), s_star.float().view(-1).detach(),
+                         beta=beta, reduction="none")
+    w = ok.float().view(-1)
+    return (l * w).sum() / w.sum().clamp(min=1.0)
+
+
+@torch.no_grad()
+def median_align(pred_log: torch.Tensor, target_log: torch.Tensor, valid: torch.Tensor) -> torch.Tensor:
+    """pred - median_valid(pred - target), per image (the no-dsh scale alignment for trim)."""
+    B = pred_log.shape[0]
+    d = (pred_log.float() - target_log.float())
+    d = torch.where(valid.bool(), d, torch.full_like(d, float("nan"))).view(B, -1)
+    m = torch.nanmedian(d, dim=1).values
+    m = torch.nan_to_num(m, nan=0.0).view(B, 1, 1, 1)
+    return pred_log.float() - m
+
+
+@torch.no_grad()
+def trim_mask_own(
+    p_al: torch.Tensor,
+    target_log: torch.Tensor,
+    valid: torch.Tensor,
+    is_gt: Optional[torch.Tensor],
+    frac: float = 0.10,
+    min_valid: int = 10,
+) -> torch.Tensor:
+    """b20 C4: drop the top-``frac`` scale-aligned residuals of pseudo-label (is_gt=0) rows.
+
+    rho = |p_al - log D| on valid pixels (detached, after an internal per-image median
+    re-alignment, so the result is invariant to a global shift of p_al; with dsh p_al is
+    already median-aligned and this is a no-op up to the even-count median convention).
+    tau = the (1-frac) quantile of rho via ``torch.kthvalue`` on rho[..., ::2, ::2];
+    valid <- valid & (rho <= tau). GT rows (is_gt=1) are never touched. Returns the new
+    bool mask, same shape as ``valid``."""
+    if frac <= 0:
+        return valid
+    B = p_al.shape[0]
+    v = valid.bool()
+    rho = (median_align(p_al, target_log, v) - target_log.float()).abs()
+    out = v.clone()
+    gt = (is_gt.view(-1).bool() if is_gt is not None
+          else torch.zeros(B, dtype=torch.bool, device=v.device))
+    for b in range(B):
+        if bool(gt[b]):
+            continue
+        sub_r = rho[b, :, ::2, ::2]
+        sub_v = v[b, :, ::2, ::2]
+        vals = sub_r[sub_v]
+        n = int(vals.numel())
+        if n < min_valid:
+            continue
+        k = max(1, min(n, int(round((1.0 - frac) * n))))
+        tau = torch.kthvalue(vals, k).values
+        out[b] = v[b] & (rho[b] <= tau)
+    return out
+
+
 class DistillLoss(torch.nn.Module):
     def __init__(self, cfg: dict):
         super().__init__()
@@ -473,9 +571,10 @@ class DistillLoss(torch.nn.Module):
     def forward(self, pred_log, target_log, mask, conf=None, weight=None,
                 pred_logsigma=None, boxes=None, box_dists=None, box_counts=None,
                 bin_logits=None, bin_centres=None, intrinsics=None, box_sizes=None,
-                is_gt=None, scale_sigma=None):
+                is_gt=None, scale_sigma=None, pad=None):
         """weight: precomposed per-pixel weight from the dataset (conf-rank x task x agreement).
-        When given, it REPLACES the legacy conf path (pass it via mask multiplication)."""
+        When given, it REPLACES the legacy conf path (pass it via mask multiplication).
+        pad: optional (B,1,H,W) synthetic-pad map (b20 fov/ownar); only eg_ssi uses it."""
         terms = {}
         loss = pred_log.new_zeros(())
         if weight is not None:
@@ -517,7 +616,7 @@ class DistillLoss(torch.nn.Module):
             terms["ssi"] = si.detach()
             loss = loss + self.ssi_w * si
         if self.eg_ssi_w > 0:
-            e = eg_ssi_loss(pred_log, target_log, eff_mask)
+            e = eg_ssi_loss(pred_log, target_log, eff_mask, pad=pad)
             terms["eg_ssi"] = e.detach()
             loss = loss + self.eg_ssi_w * e
         if self.nll_w > 0 and pred_logsigma is not None and self.nll_active:

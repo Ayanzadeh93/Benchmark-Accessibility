@@ -25,7 +25,7 @@ from typing import Dict, List, Sequence
 import numpy as np
 
 # metrics where a LOWER value is better (everything else: higher is better)
-LOWER_BETTER = {"arel", "sqrel", "rmse", "rmselog", "log10", "silog", "medianlog",
+LOWER_BETTER = {"arel", "sqrel", "rmse", "mae", "rmselog", "log10", "silog", "medianlog",
                 "arel_ssi", "arel_si"}
 DEFAULT_METRICS = ("d1", "arel", "d1_ssi", "rmse", "silog")
 

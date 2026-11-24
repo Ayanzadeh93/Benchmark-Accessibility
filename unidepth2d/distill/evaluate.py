@@ -22,7 +22,7 @@ import torch
 from common import depth_ops as D
 from common.io_utils import get_detections, load_config
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import build_student, needs_intrinsics
 
 
 def _prep_image(img_path, th, tw):
@@ -52,7 +52,7 @@ def main():
     model = build_student(cfg_model).to(device).eval()
     model.load_state_dict(ck["model"])
 
-    use_intr = bool(cfg_model["student"].get("use_intrinsics", False))
+    use_intr = needs_intrinsics(cfg_model["student"], legacy_ray=False)
     intrinsics_map = {}
     if use_intr:
         ipath = os.path.join(cfg["output"]["root"], "intrinsics.json")

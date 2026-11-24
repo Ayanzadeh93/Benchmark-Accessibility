@@ -53,16 +53,20 @@ def _timed(fn, n=ITERS, warmup=WARMUP):
 
 
 def bench_student(cfg, ckpt, device):
-    from distill.student import build_student
+    from distill.student import build_student, needs_intrinsics
     ck = torch.load(ckpt, map_location=device, weights_only=False)
     cfg_m = ck.get("cfg", cfg)
     m = build_student(cfg_m).to(device).eval()
     m.load_state_dict(ck["model"])
     s = cfg_m["student"]
     th, tw = int(s["train_size"][0]), int(s["train_size"][1])
-    use_intr = bool(s.get("use_intrinsics", False)) or bool(s.get("ray_map", False))
+    use_intr = needs_intrinsics(s)
     x = torch.randn(1, 3, th, tw, device=device)
     intr = torch.tensor([[0.8, 1.08, 0.5, 0.5]], device=device) if use_intr else None
+    from distill.rep import fuse_with_parity
+    # b20 rep4: time the fused deploy graph (no-op else). The parity check runs with TF32 off
+    # (fuse_with_parity restores the flags), so the CUDA default allow_tf32=True cannot fail it.
+    fuse_with_parity(m, x, intr)
     params = sum(p.numel() for p in m.parameters()) / 1e6
     with torch.no_grad():
         dt, peak = _timed(lambda: m.infer_metres(x, intr))
@@ -108,6 +112,7 @@ def main():
     from benchmark.run_bench import OFFICIAL
     alias = {"teacher": "v2-l", "vits": "v2-s"}      # legacy spec names
     rows = []
+    fusion_failed = []
     for spec in args.model:
         spec = alias.get(spec, spec)
         try:
@@ -122,6 +127,8 @@ def main():
             print(rows[-1], flush=True)
         except Exception as e:  # one broken model must not lose the whole table
             print(f"[skip] {spec}: {type(e).__name__}: {str(e)[:200]}", flush=True)
+            if isinstance(e, AssertionError) and "fusion parity" in str(e):
+                fusion_failed.append(spec)     # a missing rep4 row must not go unnoticed
         torch.cuda.empty_cache()
 
     out_obj = {
@@ -139,6 +146,8 @@ def main():
     with open(out, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2)
     print("wrote", out)
+    if fusion_failed:
+        raise SystemExit(f"rep4 fusion parity FAILED for {fusion_failed}: rows missing from {out}")
 
 
 if __name__ == "__main__":

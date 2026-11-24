@@ -33,7 +33,7 @@ import torch
 
 from common.io_utils import load_config
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import build_student, needs_intrinsics
 
 DATASETS = {
     "nyu": dict(repo="vikhyatk/nyu_depth_v2", config=None, split="validation",
@@ -94,7 +94,7 @@ class StudentModel:
         self.model.load_state_dict(ck["model"])
         s = cfg_model["student"]
         self.th, self.tw = int(s["train_size"][0]), int(s["train_size"][1])
-        self.use_intr = bool(s.get("use_intrinsics", False))
+        self.use_intr = needs_intrinsics(s, legacy_ray=False)
         self.device = device
         parent = os.path.basename(os.path.dirname(ckpt_path))
         self.name = f"student:{parent if parent != 'checkpoints' else 'ckpt'}"

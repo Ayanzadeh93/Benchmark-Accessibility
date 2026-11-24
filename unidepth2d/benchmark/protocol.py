@@ -116,6 +116,7 @@ def per_image_depth_metrics(
         "d2": _delta(g, p, 2.0),
         "d3": _delta(g, p, 3.0),
         "rmse": float(np.sqrt(((g - p) ** 2).mean())),
+        "mae": float(np.abs(g - p).mean()),
         "rmselog": float(np.sqrt(((np.log(g) - np.log(p)) ** 2).mean())),
         "arel": float((np.abs(g - p) / g).mean()),
         "sqrel": float((((g - p) ** 2) / g).mean()),

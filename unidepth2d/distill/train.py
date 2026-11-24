@@ -18,8 +18,13 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from common.io_utils import load_config
 from distill.dataset import DistillDataset, MultiSourceDataset
-from distill.losses import DistillLoss, cam_eq_loss, icd_consistency_loss
+from distill.losses import (DistillLoss, cam_eq_loss, dsh_scale_target, icd_consistency_loss,
+                            scale_head_loss, trim_mask_own)
 from distill.student import build_student
+
+CSTM_FC_PX = 518.9          # b20 C2: canonical focal (NYU Kinect at 640x480)
+FOV_UNCROP = {"p": 0.25, "zmin": 0.6, "zmax": 0.95}   # b20 C3b
+B20_TAGS = ("dsh", "dsh_detach", "dshft", "cstm", "fov", "ownar", "trim", "rep4", "dws4", "selgt")
 
 
 class EMA:
@@ -49,12 +54,50 @@ def _abs_rel(pred_m, target_m, valid):
     return ((pred_m[v] - target_m[v]).abs() / target_m[v]).mean()
 
 
+def select_value(sel_metric: str, val_mixed: float, val_per: dict) -> float:
+    """Checkpoint-selection scalar. 'mixed' | a source name | 'gt' (b20 selgt: mean of the
+    nyu and sun val AbsRel — real-GT domains, comparable across own-data pipelines)."""
+    if sel_metric == "mixed":
+        return val_mixed
+    if sel_metric == "gt":
+        vals = [val_per[s] for s in ("nyu", "sun") if s in val_per]
+        return sum(vals) / len(vals) if vals else val_mixed
+    return val_per.get(sel_metric, val_mixed)
+
+
+B20_K_TAGS = ("cstm", "dsh", "fov", "ownar")
+# Terms that call model(...) directly (not return_parts): under dsh their output contains s_hat,
+# so the pixel-space loss would reach scale_mlp / k_embed (spec: dL_pix/d scale_mlp = 0), and their
+# targets would mix the s* (p_al) and s_hat scale definitions.
+DSH_INCOMPATIBLE = ("bins", "anch", "scale", "scale2", "ssionly", "sced", "icd")
+
+
+def check_recipe_compat(recipes, cfg: dict) -> None:
+    """Assert the b20 recipe-tag combinations are valid (b10 tag sets are never affected)."""
+    if "dsh" in recipes:
+        bad = [t for t in DSH_INCOMPATIBLE if t in recipes]
+        assert not bad, (f"dsh is incompatible with {bad} (scale_bias / bins / affine must be off; "
+                         "sced / icd would back-propagate pixel losses into the scale head)")
+    if "dsh_detach" in recipes or "dshft" in recipes:
+        assert "dsh" in recipes, "dsh_detach / dshft require dsh"
+    if "fov" in recipes:
+        assert "cstm" in recipes and "ray" in recipes, "fov requires cstm and ray"
+    if any(t in recipes for t in B20_K_TAGS):
+        # the dataset emits the 'intrinsics' key only with student.use_intrinsics; without it the
+        # model silently uses _DEFAULT_K (constant c / e(k), fov/ownar K updates dropped)
+        assert cfg["student"].get("use_intrinsics"), \
+            f"b20 tags {[t for t in B20_K_TAGS if t in recipes]} need --use-intrinsics (K must reach the model)"
+
+
 @torch.no_grad()
-def validate(model, loader, device, log_min, log_max):
-    """Returns (mixed AbsRel, {source: AbsRel}) so checkpoint selection can target a domain."""
+def validate(model, loader, device, log_min, log_max, max_batches: int = 0):
+    """Returns (mixed AbsRel, {source: AbsRel}) so checkpoint selection can target a domain.
+    max_batches > 0 caps the number of val batches (smoke tests only)."""
     model.eval()
     sums, counts = {}, {}
-    for batch in loader:
+    for bi, batch in enumerate(loader):
+        if max_batches and bi >= max_batches:
+            break
         img = batch["image"].to(device)
         target_m = batch["depth_m"].to(device)
         valid = batch["valid"].to(device)
@@ -91,6 +134,12 @@ def main():
                                               "(sun:0 = zero-shot-clean training, no SUN)")
     ap.add_argument("--no-wandb", action="store_true", help="disable Weights & Biases logging")
     ap.add_argument("--wandb-project", default="UnidepthV2+", help="W&B project name")
+    ap.add_argument("--max-iters", type=int, default=0,
+                    help="smoke test: end each epoch's loop after N iterations (0 = off); the "
+                         "epoch is still validated/checkpointed. Combine with --epochs 2 so the "
+                         "trim epoch (>=1) is reached")
+    ap.add_argument("--max-val-batches", type=int, default=0,
+                    help="smoke test: cap validation at N batches (0 = full val split)")
     args = ap.parse_args()
     cfg = load_config(args.config)
     dcfg = cfg["distill"]
@@ -171,10 +220,43 @@ def main():
         elif t == "sced":                               # S19: camera-equivariant crop consistency (virtual camera)
             dcfg["sced_weight"] = float(dcfg.get("sced_weight", 0.5))
             dcfg["sced_p"] = float(dcfg.get("sced_p", 0.5))
+        # ── b20 "CanonScale-Rep" tags (docs/B20_SPEC.md section 2) ──
+        elif t == "dsh":                                # C1 decoupled global scale head
+            cfg["student"]["scale_head"] = True
+            dcfg["loss"]["scale_head_weight"] = float(dcfg["loss"].get("scale_head_weight", 1.0))
+            dcfg["loss"]["scale_head_beta"] = float(dcfg["loss"].get("scale_head_beta", 0.05))
+        elif t == "dsh_detach":                         # C1 ablation: L_s does not reach the trunk
+            cfg["student"]["scale_head_detach"] = True
+        elif t == "dshft":                              # C1 fallback: retrain the scale head only
+            dcfg["dshft"] = True
+        elif t == "cstm":                               # C2 canonical-focal depth space
+            cfg["student"]["cstm_fc"] = CSTM_FC_PX
+        elif t == "fov":                                # C3b zoom-out uncrop on top of s5
+            dcfg["fov_uncrop"] = dict(FOV_UNCROP)
+        elif t == "ownar":                              # C3a aspect-true own rows (v2 cache)
+            dcfg["own_source"] = "v2cache"
+            dcfg["v2cache_manifest"] = os.path.join(
+                cfg["output"]["root"], "v2", "cache", "own", "manifest.csv").replace("\\", "/")
+        elif t == "trim":                               # C4 top-10% residual trim, own rows only
+            dcfg["loss"]["trim_frac_own"] = 0.10
+            dcfg["loss"]["trim_start_epoch"] = 1
+        elif t == "dws4":                               # C5' plain depthwise-separable stride-4 blocks
+            cfg["student"]["dws4"] = True
+        elif t == "rep4":                               # C5 re-parameterised stride-4 blocks
+            cfg["student"]["rep4"] = True
+        elif t == "selgt":                              # select checkpoints on mean(nyu, sun) val
+            dcfg["select_metric"] = "gt"
         else:
             raise SystemExit(f"unknown recipe tag: {t}")
+    check_recipe_compat(recipes, cfg)
     if recipes:
         print(f"recipes active: {recipes}")
+    dsh_on = bool(cfg["student"].get("scale_head", False))
+    dsh_w = float(dcfg["loss"].get("scale_head_weight", 0.0)) if dsh_on else 0.0
+    dsh_beta = float(dcfg["loss"].get("scale_head_beta", 0.05))
+    trim_frac = float(dcfg["loss"].get("trim_frac_own", 0.0))
+    trim_start = int(dcfg["loss"].get("trim_start_epoch", 1))
+    dshft = bool(dcfg.get("dshft", False))
     device = dcfg.get("device", "cuda")
     if device == "cuda" and not torch.cuda.is_available():
         device = "cpu"
@@ -184,9 +266,15 @@ def main():
         sd = torch.load(args.init_from, map_location=device, weights_only=False)["model"]
         missing, unexpected = model.load_state_dict(sd, strict=False)
         # new affine head (N4) is expected-missing -> keeps its identity-init; warn on anything else
-        miss = [k for k in missing if not k.startswith("affine.")]
-        print(f"warm-start from {args.init_from}: kept_new(affine)={len(missing)-len(miss)} "
+        miss = [k for k in missing if not k.startswith(("affine.", "k_embed.", "scale_mlp."))]
+        print(f"warm-start from {args.init_from}: kept_new(affine/scale-head)={len(missing)-len(miss)} "
               f"other_missing={miss} unexpected={list(unexpected)}")
+    if dshft:   # C1 fallback: only the scale head (scale_mlp, k_embed) trains; BN stats frozen below
+        n_tr = 0
+        for n, p in model.named_parameters():
+            p.requires_grad_(n.startswith(("scale_mlp.", "k_embed.")))
+            n_tr += p.numel() if p.requires_grad else 0
+        print(f"dshft: training {n_tr} scale-head params only")
     criterion = DistillLoss(cfg).to(device)
 
     if args.data == "gt":
@@ -217,6 +305,8 @@ def main():
     sced_w = float(dcfg.get("sced_weight", 0.0))            # S19 camera-equivariance weight (0 = off)
     sced_p = float(dcfg.get("sced_p", 0.5))                 # fraction of steps carrying the extra view
     steps_per_epoch = max(1, len(train_ld) // accum)
+    if args.max_iters:                                       # smoke test: capped epochs
+        steps_per_epoch = max(1, min(len(train_ld), args.max_iters) // accum)
     total_steps = epochs * steps_per_epoch
     warmup_steps = min(500, max(1, total_steps // 20))
     sched = torch.optim.lr_scheduler.SequentialLR(
@@ -259,11 +349,17 @@ def main():
     best = math.inf
     for epoch in range(epochs):
         model.train()
+        if dshft:   # frozen trunk: keep its BN running statistics fixed too
+            for m in model.modules():
+                if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+                    m.eval()
         criterion.nll_active = epoch >= nll_warmup_epochs
         t0 = time.time()
         opt.zero_grad(set_to_none=True)
         running = {}
         for it, batch in enumerate(train_ld):
+            if args.max_iters and it >= args.max_iters:
+                break
             img = batch["image"].to(device, non_blocking=True)
             target_log = batch["log_depth"].to(device, non_blocking=True)
             valid = batch["valid"].to(device, non_blocking=True)
@@ -276,21 +372,51 @@ def main():
             box_sizes = batch["box_sizes"].to(device, non_blocking=True) if "box_sizes" in batch else None
             is_gt = batch["is_gt"].to(device, non_blocking=True) if "is_gt" in batch else None
             scale_sigma = batch["scale_sigma"].to(device, non_blocking=True) if "scale_sigma" in batch else None
+            pad = batch["pad"].to(device, non_blocking=True).float() if "pad" in batch else None
             with torch.amp.autocast("cuda", enabled=use_amp):
-                out = model(img, intr)
+                if dsh_on:
+                    # C1: decoupled scale. s* = stopgrad median(logD - U(r_c) - c) on valid pixels
+                    # (fp32); every pixel loss sees p_al = U(r_c) + c + s*, so a scale error never
+                    # sends gradient into the structure branch; s_hat learns s* via L_s only.
+                    parts = model(img, intr, return_parts=True)
+                    s_star, s_ok = dsh_scale_target(parts["r_up"], parts["c"], target_log, valid,
+                                                    fallback=parts["s_hat"])
+                    shift = (parts["c"].float() + s_star).to(parts["r_up"].dtype)
+                    p_al = parts["r_up"] + shift[:, :, None, None]
+                    out = torch.cat([p_al, parts["extra"]], dim=1) if parts["extra"] is not None else p_al
+                else:
+                    out = model(img, intr)
                 # output layout: [mu | logsigma iff uncertainty_head | bin logits iff bins>0]
                 pred_log = out[:, :1]
+                # C4 trim: own (is_gt=0) rows, from trim_start epoch; s* above is pre-trim
+                valid_loss = valid
+                if trim_frac > 0 and epoch >= trim_start:
+                    valid_loss = trim_mask_own(pred_log.detach(), target_log, valid, is_gt, trim_frac)
                 has_sig = getattr(model, "uncertainty_head", False)
                 pred_logsigma = out[:, 1:2] if has_sig else None
                 n_bins = getattr(model, "bins", 0)
                 bin_logits = out[:, (2 if has_sig else 1):] if n_bins > 0 else None
                 bin_centres = getattr(model, "bin_centres_log", None) if n_bins > 0 else None
-                loss, terms = criterion(pred_log, target_log, valid, conf, weight=weight,
+                loss, terms = criterion(pred_log, target_log, valid_loss, conf, weight=weight,
                                         pred_logsigma=pred_logsigma, boxes=boxes,
                                         box_dists=box_dists, box_counts=box_counts,
                                         bin_logits=bin_logits, bin_centres=bin_centres,
                                         intrinsics=intr, box_sizes=box_sizes, is_gt=is_gt,
-                                        scale_sigma=scale_sigma)
+                                        scale_sigma=scale_sigma, pad=pad)
+                if dsh_on:
+                    l_s = scale_head_loss(parts["s_hat"], s_star, s_ok, dsh_beta)
+                    loss = loss + dsh_w * l_s
+                    terms["scale_head"] = l_s.detach()
+                    terms["total"] = loss.detach()
+                    okf = s_ok.float()
+                    terms["s_hat_err"] = (((parts["s_hat"].float().view(-1) - s_star.view(-1)).abs()
+                                           * okf).sum() / okf.sum().clamp(min=1.0)).detach()
+                if valid_loss is not valid:
+                    own = (is_gt.view(-1, 1, 1, 1) == 0) if is_gt is not None else torch.ones_like(valid)
+                    n_v = (valid & own).sum().clamp(min=1)
+                    terms["trim_frac"] = ((valid & own).sum() - (valid_loss & own).sum()).float() / n_v
+                if pad is not None:
+                    terms["pad_frac"] = pad.mean().detach()
                 # S19 SCED: a crop-and-resize is a VIRTUAL CAMERA (f'=f/s, shifted
                 # principal point) under which true metric depth is unchanged. Pull the
                 # crop-view prediction toward the detached full-view prediction at
@@ -347,18 +473,21 @@ def main():
                 ema.update(model)
             for k, v in terms.items():
                 running[k] = running.get(k, 0.0) + float(v)
-            if (it + 1) % (accum * 50) == 0:
+            if (it + 1) % (accum * 50) == 0 or (args.max_iters and (it + 1) % accum == 0):
                 avg = {k: round(v / (it + 1), 4) for k, v in running.items()}
-                print(f"  e{epoch} it{it+1}/{len(train_ld)} {avg} lr={sched.get_last_lr()[0]:.2e}")
+                last = {k: round(float(v), 4) for k, v in terms.items()} if args.max_iters else {}
+                print(f"  e{epoch} it{it+1}/{len(train_ld)} {avg} lr={sched.get_last_lr()[0]:.2e}"
+                      + (f" last={last}" if last else ""), flush=True)
 
         # validate + checkpoint the EMA weights (they eval/deploy better than the raw ones)
         raw_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
         model.load_state_dict(ema.state_dict_like(model))
-        val_mixed, val_per = validate(model, val_ld, device, log_min, log_max)
+        val_mixed, val_per = validate(model, val_ld, device, log_min, log_max,
+                                      max_batches=args.max_val_batches)
         ema_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
         model.load_state_dict(raw_state)
         sel_metric = str(dcfg.get("select_metric", "mixed"))
-        val_absrel = val_per.get(sel_metric, val_mixed) if sel_metric != "mixed" else val_mixed
+        val_absrel = select_value(sel_metric, val_mixed, val_per)
         dt = time.time() - t0
         print(f"[epoch {epoch}] val AbsRel={val_mixed:.4f} (EMA) per-source={val_per} "
               f"select[{sel_metric}]={val_absrel:.4f}  ({dt:.0f}s)")

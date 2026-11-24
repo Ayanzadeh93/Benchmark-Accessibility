@@ -32,6 +32,26 @@ class StudentConfig:
     bins: int = 0                      # >0: hybrid log-bin head (B logits -> softmax expectation)
     affine_head: bool = False          # N4 AnchDistill: light scene descriptor -> per-image global
                                        # (da,db) recalibrating log-depth (internalizes the SCMR fix)
+    # ── b20 (all OFF by default; with the defaults the model is bit-identical to b10) ──
+    scale_head: bool = False           # C1 dsh: decoupled global scale head (GAP+MLP) + mean-centred r
+    scale_head_detach: bool = False    # dsh_detach ablation: stop L_s gradient into the trunk
+    cstm_fc: float = 0.0               # C2 cstm: >0 = canonical focal (px) -> c = log(f_px / f_c)
+    rep4: bool = False                 # C5 rep4: RepDWSep for smooths[0] and head[0]
+    dws4: bool = False                 # C5' dws4: plain DW3x3-BN-ReLU-PW1x1-BN-ReLU at the same two
+                                       # sites (same deploy MACs as fused rep4, no multi-branch training)
+
+
+SCALE_EMBED_DIM = 16                   # e(k) width
+SCALE_HIDDEN = 128                     # scale MLP hidden width
+
+
+def _cstm_term(intrinsics: torch.Tensor, H: int, W: int, f_c: float) -> torch.Tensor:
+    """C2 canonical-focal term c = log(f_px / f_c), f_px = sqrt((fx_n*W)(fy_n*H)) at the
+    network input. intrinsics: (B,4) normalised (fx/W, fy/H, cx/W, cy/H). Returns (B,1).
+    Under a zoom by k (with the K update) f_px -> k f_px, so c shifts by exactly log k."""
+    fx = intrinsics[:, 0:1].clamp(min=1e-4) * float(W)
+    fy = intrinsics[:, 1:2].clamp(min=1e-4) * float(H)
+    return 0.5 * (torch.log(fx) + torch.log(fy)) - math.log(float(f_c))
 
 
 class _ConvBNAct(nn.Module):
@@ -45,10 +65,35 @@ class _ConvBNAct(nn.Module):
         return self.act(self.bn(self.conv(x)))
 
 
+class _DWSep(nn.Module):
+    """MobileNet-style depthwise-separable 3x3 block (BN folds into the convs at export)."""
+
+    def __init__(self, c):
+        super().__init__()
+        self.dw = nn.Conv2d(c, c, 3, 1, 1, groups=c, bias=False)
+        self.dw_bn = nn.BatchNorm2d(c)
+        self.pw = nn.Conv2d(c, c, 1, 1, 0, bias=False)
+        self.pw_bn = nn.BatchNorm2d(c)
+        self.act = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        return self.act(self.pw_bn(self.pw(self.act(self.dw_bn(self.dw(x))))))
+
+
 class DepthStudent(nn.Module):
+    # class-level defaults so subclasses that bypass __init__ (distill/v2 PlainFPNStudent)
+    # still see the b20 switches as OFF
+    scale_head = False
+    scale_head_detach = False
+    cstm_fc = 0.0
+    rep4 = False
+    dws4 = False
+
     def __init__(self, cfg: StudentConfig = StudentConfig()):
         super().__init__()
         self.cfg = cfg
+        if cfg.scale_head and (int(cfg.bins) > 0 or cfg.affine_head):
+            raise ValueError("scale_head (dsh) is incompatible with bins / affine_head")
         in_chans = 6 if cfg.ray_map else 3
         self.encoder = timm.create_model(
             cfg.backbone,
@@ -62,15 +107,34 @@ class DepthStudent(nn.Module):
         # Lateral 1x1 projections for each pyramid level.
         self.laterals = nn.ModuleList([nn.Conv2d(c, dc, 1) for c in chs])
         # Smoothing 3x3 after each top-down merge.
-        self.smooths = nn.ModuleList([_ConvBNAct(dc, dc, 3) for _ in chs])
+        # C5 rep4: the two dense 3x3 convs at stride 4 (smooths[0], head[0]) become RepDWSep.
+        self.rep4 = bool(cfg.rep4)
+        self.dws4 = bool(getattr(cfg, "dws4", False))
+        if self.rep4 and self.dws4:
+            raise ValueError("rep4 and dws4 are alternatives; pick one")
+        if self.dws4:
+            self.smooths = nn.ModuleList([_DWSep(dc) if i == 0 else _ConvBNAct(dc, dc, 3)
+                                          for i in range(len(chs))])
+        elif self.rep4:
+            from distill.rep import RepDWSep
+            self.smooths = nn.ModuleList([RepDWSep(dc) if i == 0 else _ConvBNAct(dc, dc, 3)
+                                          for i in range(len(chs))])
+        else:
+            self.smooths = nn.ModuleList([_ConvBNAct(dc, dc, 3) for _ in chs])
         # Output layout: [B bin-logits when bins>0 | else 1 log-depth ch] + [1 log-sigma when unc].
         self.bins = int(cfg.bins)
         depth_ch = self.bins if self.bins > 0 else 1
         out_ch = depth_ch + (1 if cfg.uncertainty_head else 0)
-        self.head = nn.Sequential(
-            _ConvBNAct(dc, dc, 3),
-            nn.Conv2d(dc, out_ch, 1),
-        )
+        if self.dws4:
+            self.head = nn.Sequential(_DWSep(dc), nn.Conv2d(dc, out_ch, 1))
+        elif self.rep4:
+            from distill.rep import RepDWSep
+            self.head = nn.Sequential(RepDWSep(dc), nn.Conv2d(dc, out_ch, 1))
+        else:
+            self.head = nn.Sequential(
+                _ConvBNAct(dc, dc, 3),
+                nn.Conv2d(dc, out_ch, 1),
+            )
         mid_log = math.log(max(1e-3, (cfg.depth_min_m * cfg.depth_max_m) ** 0.5))
         nn.init.zeros_(self.head[-1].bias)
         if self.bins == 0:
@@ -110,6 +174,23 @@ class DepthStudent(nn.Module):
         self.log_min = math.log(cfg.depth_min_m)
         self.log_max = math.log(cfg.depth_max_m)
 
+        # ── b20 C1 dsh: decoupled global scale head (built last so that, when it is OFF, the
+        # RNG stream consumed by __init__ — and therefore every init weight — is unchanged) ──
+        self.cstm_fc = float(cfg.cstm_fc)
+        self.scale_head = bool(cfg.scale_head)
+        self.scale_head_detach = bool(cfg.scale_head_detach)
+        if self.scale_head:
+            g_dim = int(chs[-1]) + int(chs[-2]) + dc + SCALE_EMBED_DIM
+            self.k_embed = nn.Sequential(nn.Linear(4, SCALE_EMBED_DIM), nn.ReLU(inplace=True))
+            self.scale_mlp = nn.Sequential(nn.Linear(g_dim, SCALE_HIDDEN), nn.ReLU(inplace=True),
+                                           nn.Linear(SCALE_HIDDEN, 1))
+            nn.init.zeros_(self.scale_mlp[-1].weight)               # w2 = 0
+            with torch.no_grad():
+                self.scale_mlp[-1].bias.fill_(mid_log)              # b2 = log sqrt(0.2*30)
+                # structure head starts at r = const -> r_c = 0, so the initial output is the
+                # constant map b2 + c (spec C1 'at init the output is a constant map')
+                self.head[-1].weight[:1].zero_()
+
     _DEFAULT_K = (0.8, 1.08, 0.5, 0.5)
 
     def _build_rays(self, B, H, W, intrinsics, device, dtype):
@@ -125,12 +206,23 @@ class DepthStudent(nn.Module):
         r = torch.stack([x.expand(B, H, W), y.expand(B, H, W), z.expand(B, H, W)], dim=1)
         return r / r.norm(dim=1, keepdim=True).clamp(min=1e-6)
 
-    def forward(self, x: torch.Tensor, intrinsics: torch.Tensor = None) -> torch.Tensor:
+    def _k_or_default(self, intrinsics, B, device, dtype):
+        if intrinsics is None:
+            return torch.tensor([self._DEFAULT_K], device=device, dtype=dtype).expand(B, 4)
+        return intrinsics
+
+    def forward(self, x: torch.Tensor, intrinsics: torch.Tensor = None, return_parts: bool = False):
         """x: (B,3,H,W) normalized RGB; intrinsics: (B,4) or None.
 
         Output layout along channels: [0]=log-depth; [1]=log-sigma (iff uncertainty_head);
-        remaining = bin logits (iff bins>0). Callers that only want depth slice [:, :1]."""
+        remaining = bin logits (iff bins>0). Callers that only want depth slice [:, :1].
+
+        b20: with ``scale_head`` the depth channel is U(r_c) + s_hat + c. ``return_parts=True``
+        (scale_head only) returns {'r_up': U(r_c) (B,1,H,W), 's_hat': (B,1), 'c': (B,1),
+        'extra': upsampled non-depth channels or None} for the decoupled training losses."""
         in_hw = x.shape[-2:]
+        if return_parts and not self.scale_head:
+            raise ValueError("return_parts=True requires the dsh scale head")
         if self.ray_map:
             rays = self._build_rays(x.shape[0], in_hw[0], in_hw[1], intrinsics, x.device, x.dtype)
             x = torch.cat([x, rays], dim=1)
@@ -162,6 +254,10 @@ class DepthStudent(nn.Module):
             affine = (da[:, :, None, None], db[:, :, None, None])      # (B,1,1,1) each
 
         out = self.head(x_td)
+
+        if self.scale_head:
+            return self._dsh_output(out, x_td, feats, intrinsics, in_hw, return_parts)
+
         if out.shape[-2:] != in_hw:
             out = F.interpolate(out, size=in_hw, mode="bilinear", align_corners=False)
 
@@ -176,12 +272,56 @@ class DepthStudent(nn.Module):
             if affine is not None:
                 mu = mu * (1.0 + affine[0]) + affine[1]
             parts = [mu] + ([logsigma] if logsigma is not None else []) + [logits]
-            return torch.cat(parts, dim=1)
+            return self._add_cstm(torch.cat(parts, dim=1), intrinsics, in_hw)
 
         if affine is not None:
             mu = out[:, :1] * (1.0 + affine[0]) + affine[1]
             out = torch.cat([mu, out[:, 1:]], dim=1) if out.shape[1] > 1 else mu
-        return out
+        return self._add_cstm(out, intrinsics, in_hw)
+
+    def _add_cstm(self, out, intrinsics, in_hw):
+        """C2 without dsh: the network predicts canonical log-depth; + c restores metric."""
+        if not self.cstm_fc > 0:
+            return out
+        k = self._k_or_default(intrinsics, out.shape[0], out.device, out.dtype)
+        c = _cstm_term(k, in_hw[0], in_hw[1], self.cstm_fc).to(out.dtype)
+        mu = out[:, :1] + c[:, :, None, None]
+        return torch.cat([mu, out[:, 1:]], dim=1) if out.shape[1] > 1 else mu
+
+    def _dsh_output(self, out, x_td, feats, intrinsics, in_hw, return_parts):
+        """C1 dsh: log D = U(r_c) + s_hat + c, with r_c = r - mean_hw(r) at stride 4."""
+        B = out.shape[0]
+        r = out[:, :1]
+        r_c = r - r.mean(dim=(2, 3), keepdim=True)            # removes the gauge freedom exactly
+        k = self._k_or_default(intrinsics, B, out.device, out.dtype)
+        kf = k.float()
+        k_feat = torch.stack([torch.log(kf[:, 0].clamp(min=1e-4)), torch.log(kf[:, 1].clamp(min=1e-4)),
+                              kf[:, 2] - 0.5, kf[:, 3] - 0.5], dim=1).to(x_td.dtype)
+        g = torch.cat([feats[-1].mean(dim=(2, 3)), feats[-2].mean(dim=(2, 3)),
+                       x_td.mean(dim=(2, 3)), self.k_embed(k_feat)], dim=1)
+        if self.scale_head_detach:
+            g = g.detach()
+        s_hat = self.scale_mlp(g)                                # (B,1)
+        if self.cstm_fc > 0:
+            c = _cstm_term(k, in_hw[0], in_hw[1], self.cstm_fc).to(s_hat.dtype)
+        else:
+            c = torch.zeros_like(s_hat)
+        r_up = r_c
+        extra = out[:, 1:] if out.shape[1] > 1 else None
+        if r_up.shape[-2:] != in_hw:
+            r_up = F.interpolate(r_up, size=in_hw, mode="bilinear", align_corners=False)
+            if extra is not None:
+                extra = F.interpolate(extra, size=in_hw, mode="bilinear", align_corners=False)
+        if return_parts:
+            return {"r_up": r_up, "s_hat": s_hat, "c": c, "extra": extra}
+        mu = r_up + (s_hat + c).to(r_up.dtype)[:, :, None, None]
+        return torch.cat([mu, extra], dim=1) if extra is not None else mu
+
+    def reparameterize(self) -> int:
+        """C5: fuse every RepDWSep (rep4) into its deploy form, in place. Call in eval mode,
+        after loading weights. Returns the number of fused blocks (0 for non-rep4 models)."""
+        from distill.rep import reparameterize_model
+        return reparameterize_model(self)
 
     @torch.no_grad()
     def infer_metres(self, x: torch.Tensor, intrinsics: torch.Tensor = None) -> torch.Tensor:
@@ -198,6 +338,22 @@ class DepthStudent(nn.Module):
         return depth, sigma
 
 
+def needs_intrinsics(student_cfg: dict, legacy_ray: bool = True) -> bool:
+    """True when a student built from ``student_cfg`` reads the camera K at inference.
+
+    K reaches the model through FiLM (``use_intrinsics``), the ray map (``ray_map``), the b20 dsh
+    camera embedding e(k) (``scale_head``) or the b20 cstm term c = log(f_px / f_c)
+    (``cstm_fc > 0``); with intrinsics=None the last three silently fall back to _DEFAULT_K.
+    Every loader / exporter must use this one rule.
+
+    ``legacy_ray=False`` keeps the historical rule of the loaders that never passed K for a
+    ray-only model (gt_eval, evaluate, predict_objects, cache_assistant), so their outputs for
+    pre-b20 checkpoints are unchanged; the b20 terms are added on top in both modes."""
+    s = student_cfg
+    base = bool(s.get("use_intrinsics", False)) or (legacy_ray and bool(s.get("ray_map", False)))
+    return base or bool(s.get("scale_head", False)) or float(s.get("cstm_fc", 0.0) or 0.0) > 0
+
+
 def build_student(cfg: dict) -> DepthStudent:
     s = cfg["student"]
     return DepthStudent(StudentConfig(
@@ -211,4 +367,9 @@ def build_student(cfg: dict) -> DepthStudent:
         ray_map=bool(s.get("ray_map", False)),
         bins=int(s.get("bins", 0)),
         affine_head=bool(s.get("affine_head", False)),
+        scale_head=bool(s.get("scale_head", False)),
+        scale_head_detach=bool(s.get("scale_head_detach", False)),
+        cstm_fc=float(s.get("cstm_fc", 0.0)),
+        rep4=bool(s.get("rep4", False)),
+        dws4=bool(s.get("dws4", False)),
     ))

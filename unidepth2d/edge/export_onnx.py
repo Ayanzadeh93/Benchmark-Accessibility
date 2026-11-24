@@ -63,12 +63,17 @@ def export(ckpt_path: str, out_path: str, opset: int = 18, parity_tol: float = 1
     model, cfg = load_student(ckpt_path)
     s = cfg["student"]
     h, w = int(s["train_size"][0]), int(s["train_size"][1])
-    uses_intr = bool(s.get("use_intrinsics", False)) or bool(s.get("ray_map", False))
+    # b20: the dsh scale head and the cstm term read K even without FiLM / rays
+    from distill.student import needs_intrinsics
+    uses_intr = needs_intrinsics(s)
     wrap = ExportWrapper(model, uses_intr).eval()
 
     g = torch.Generator().manual_seed(0)
     image = torch.randn(1, 3, h, w, generator=g)
     intr = torch.tensor([[0.8, 1.08, 0.5, 0.5]], dtype=torch.float32)
+    # b20 rep4: export the fused deploy form; parity-checked vs the training form (no-op else)
+    from distill.rep import fuse_with_parity
+    fuse_with_parity(model, image, intr if uses_intr else None)
     args = (image, intr) if uses_intr else (image,)
     input_names = ["image", "intrinsics"] if uses_intr else ["image"]
 

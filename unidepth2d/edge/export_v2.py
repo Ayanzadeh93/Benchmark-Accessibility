@@ -325,7 +325,8 @@ def export_legacy_default_k(ckpt_path: str, out_path: str, K: Sequence[float] = 
     student, cfg = load_student(ckpt_path)
     s = cfg["student"]
     h, w = int(s["train_size"][0]), int(s["train_size"][1])
-    uses_k = bool(s.get("use_intrinsics", False)) or bool(s.get("ray_map", False))
+    from distill.student import needs_intrinsics
+    uses_k = needs_intrinsics(s)
     wrap = LegacyDefaultKWrapper(student, K).eval()
     used = export_module(wrap, out_path, (h, w), opset, exporter)
     ok_shapes, shape_problems = check_static_shapes(out_path)

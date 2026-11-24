@@ -134,5 +134,61 @@
     "recipe": "S2-mix + s4,s5,ray,range,prox,scale2",
     "params_M": 15.48,
     "best_val_absrel": 0.08621217350017941
+  },
+  "b10": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b10/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "own",
+    "params_M": 5.12,
+    "best_val_absrel": 0.1493
+  },
+  "b20": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,selgt,rep4",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.06,
+    "best_val_absrel": 0.13805
+  },
+  "b20core": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20core/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.18,
+    "best_val_absrel": 0.1099
+  },
+  "b20dws": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11225000000000002
   }
 }

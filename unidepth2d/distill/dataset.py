@@ -207,6 +207,49 @@ class MultiSourceDataset(Dataset):
                 raise SystemExit("recipe tag 'csd' set but no <src>_consensus_scale.json found "
                                  "— run scripts/build_consensus_scale.py first")
 
+        # ── b20 C3b fov: zoom-out uncrop sharing ONE u draw with the s5 crop ──
+        fv = dc.get("fov_uncrop") or {}
+        self.fov_p = float(fv.get("p", 0.0)) if augment else 0.0
+        self.fov_zmin = float(fv.get("zmin", 0.6))
+        self.fov_zmax = float(fv.get("zmax", 0.95))
+
+        # ── b20 C3a ownar: aspect-true own rows from the v2 cache (crop-or-pad, no stretch) ──
+        self.own_source = str(dc.get("own_source", "data_gt"))
+        self.v2cache: Dict[str, dict] = {}
+        self.own_intr_json: Dict[str, list] = {}
+        if self.own_source == "v2cache":
+            if self.use_taskw or self.use_assistant:
+                raise SystemExit("ownar is incompatible with s7/s8: their maps are stored on the "
+                                 "stretched 640x480 grid")
+            mpath = dc.get("v2cache_manifest") or os.path.join(
+                os.path.dirname(self.root), "v2", "cache", "own", "manifest.csv")
+            with open(mpath, newline="", encoding="utf-8") as f:
+                for cr in csv.DictReader(f):
+                    self.v2cache[cr["id"]] = cr
+            # intrinsics.json: per-id (fx/W, fy/H, cx/W, cy/H) NORMALISED by the original image
+            # size (verified: fx_px/fy_px median 0.99, cx median 0.503). Normalised K is invariant
+            # to the aspect-preserving cover resize, so K_px(cache) = K_norm * (W_c, H_c).
+            ipath = dc.get("v2cache_intrinsics") or os.path.join(cfg["output"]["root"], "intrinsics.json")
+            if os.path.exists(ipath):
+                with open(ipath, "r", encoding="utf-8") as f:
+                    self.own_intr_json = json.load(f)
+            own_ids = [r["id"] for r in self.rows if r["source"] == "own"]
+            self.n_own_cache = sum(1 for i in own_ids if i in self.v2cache)
+            self.n_own_fallback = len(own_ids) - self.n_own_cache
+            # K sanity (spec C3a): cx_px / W_c in [0.35, 0.65] for >= 99% of cached own rows
+            cxr = []
+            for i in own_ids:
+                cr = self.v2cache.get(i)
+                if cr is None:
+                    continue
+                k = self._own_k_norm(i, None)
+                if k is not None:
+                    cxr.append(k[2])            # cx_px / W_c == normalised cx
+            if cxr:
+                frac_ok = float(np.mean([(0.35 <= c <= 0.65) for c in cxr]))
+                assert frac_ok >= 0.99, f"ownar K check failed: only {frac_ok:.3f} of cx in [.35,.65]"
+        self.emit_pad = self.own_source == "v2cache" or bool(dc.get("fov_uncrop"))
+
     def __len__(self) -> int:
         return len(self.rows)
 
@@ -231,12 +274,123 @@ class MultiSourceDataset(Dataset):
         v = fb.get(r["id"])
         return list(v) if v else list(DEFAULT_INTR)
 
+    # ── b20 helpers ──────────────────────────────────────────────────────────────────────────
+    def _own_k_norm(self, rid: str, r: dict = None):
+        """Normalised (fx/W, fy/H, cx/W, cy/H) of an own image: intrinsics.json, else the row."""
+        v = self.own_intr_json.get(rid)
+        if v is not None:
+            return [float(x) for x in v]
+        return self._row_intrinsics(r) if r is not None else None
+
+    def _draw_geom_mode(self):
+        """Geometric augmentation choice. Without fov this is EXACTLY the legacy s5 draw
+        (one np.random.rand() only when crop_p > 0). With fov, one shared u ~ U(0,1):
+        u < crop_p -> 's5'; crop_p <= u < crop_p + fov_p -> 'fov'; else None. So the s5 rate
+        stays crop_p (0.5) and the uncrop rate is fov_p (0.25)."""
+        if self.fov_p > 0:
+            u = np.random.rand()
+            if u < self.crop_p:
+                return "s5"
+            if u < self.crop_p + self.fov_p:
+                return "fov"
+            return None
+        if self.crop_p > 0 and np.random.rand() < self.crop_p:
+            return "s5"
+        return None
+
+    @staticmethod
+    def _noise_rgb(h: int, w: int) -> np.ndarray:
+        return np.clip(np.random.normal(127.0, 40.0, (h, w, 3)), 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def _affine_boxes(boxes, box_dists, box_sizes, n_boxes, sx, tx, sy, ty):
+        """x' = x*sx + tx, y' = y*sy + ty on normalised xyxy; clip, drop degenerate. -> n_boxes."""
+        if not n_boxes:
+            return 0
+        b = boxes[:n_boxes].copy()
+        b[:, [0, 2]] = b[:, [0, 2]] * sx + tx
+        b[:, [1, 3]] = b[:, [1, 3]] * sy + ty
+        b = np.clip(b, 0.0, 1.0)
+        keep = ((b[:, 2] - b[:, 0]) > 0.02) & ((b[:, 3] - b[:, 1]) > 0.02)
+        kept, kd, ks = b[keep], box_dists[:n_boxes][keep], box_sizes[:n_boxes][keep]
+        boxes[:] = 0.0
+        box_dists[:] = 0.0
+        box_sizes[:] = 0.0
+        n = len(kept)
+        boxes[:n], box_dists[:n], box_sizes[:n] = kept, kd, ks
+        return n
+
+    def _crop_or_pad_to(self, H, W, rgb, depth, weight, pad, K_px, train):
+        """C3a: bring a cache image to (H, W) WITHOUT resizing. Each axis independently:
+        larger -> crop (random offset when training, centred otherwise; c -= offset);
+        smaller -> paste into a N(127,40^2) noise canvas (random/centred offset; c += offset),
+        depth = weight = 0 and pad = 1 outside. Returns (rgb, depth, weight, pad, K_px, geo)
+        with geo = (sx0, dx0, sy0, dy0) for box remapping."""
+        h, w = depth.shape
+        fx, fy, cx, cy = K_px
+
+        def axis(n, N):
+            if n >= N:
+                o = np.random.randint(0, n - N + 1) if train else (n - N) // 2
+                return o, o + N, 0          # src [o, o+N) -> dst [0, N)
+            o = np.random.randint(0, N - n + 1) if train else (N - n) // 2
+            return 0, n, o                  # src [0, n) -> dst [o, o+n)
+
+        sx0, sx1, dx0 = axis(w, W)
+        sy0, sy1, dy0 = axis(h, H)
+        if w >= W and h >= H:
+            rgb = rgb[sy0:sy1, sx0:sx1]
+            depth = depth[sy0:sy1, sx0:sx1]
+            weight = weight[sy0:sy1, sx0:sx1]
+            pad = pad[sy0:sy1, sx0:sx1]
+        else:
+            ch, cw = sy1 - sy0, sx1 - sx0
+            c_rgb = self._noise_rgb(H, W)
+            c_dep = np.zeros((H, W), np.float32)
+            c_w = np.zeros((H, W), np.float32)
+            c_pad = np.ones((H, W), np.uint8)
+            c_rgb[dy0:dy0 + ch, dx0:dx0 + cw] = rgb[sy0:sy1, sx0:sx1]
+            c_dep[dy0:dy0 + ch, dx0:dx0 + cw] = depth[sy0:sy1, sx0:sx1]
+            c_w[dy0:dy0 + ch, dx0:dx0 + cw] = weight[sy0:sy1, sx0:sx1]
+            c_pad[dy0:dy0 + ch, dx0:dx0 + cw] = pad[sy0:sy1, sx0:sx1]
+            rgb, depth, weight, pad = c_rgb, c_dep, c_w, c_pad
+        K = (fx, fy, cx - sx0 + dx0, cy - sy0 + dy0)
+        return (np.ascontiguousarray(rgb), np.ascontiguousarray(depth),
+                np.ascontiguousarray(weight), np.ascontiguousarray(pad), K, (sx0, dx0, sy0, dy0))
+
+    def _fov_uncrop(self, rgb, depth, weight, pad, K_norm):
+        """C3b: zoom-out uncrop. z ~ U(zmin, zmax); shrink the view (image AREA, labels NEAREST)
+        and paste it at a random offset into a noise canvas of the SAME size. Depth values are
+        untouched (metric labels stay exact); K in pixels: f' = f z_axis, c' = c z_axis + o.
+        Returns (rgb, depth, weight, pad, K_norm, (sx, tx, sy, ty)) with the normalised-coord map."""
+        h, w = depth.shape
+        z = np.random.uniform(self.fov_zmin, self.fov_zmax)
+        nh, nw = int(round(z * h)), int(round(z * w))
+        oy = np.random.randint(0, h - nh + 1)
+        ox = np.random.randint(0, w - nw + 1)
+        c_rgb = self._noise_rgb(h, w)
+        c_dep = np.zeros((h, w), np.float32)
+        c_w = np.zeros((h, w), np.float32)
+        c_pad = np.ones((h, w), np.uint8)
+        c_rgb[oy:oy + nh, ox:ox + nw] = cv2.resize(rgb, (nw, nh), interpolation=cv2.INTER_AREA)
+        c_dep[oy:oy + nh, ox:ox + nw] = cv2.resize(depth, (nw, nh), interpolation=cv2.INTER_NEAREST)
+        c_w[oy:oy + nh, ox:ox + nw] = cv2.resize(weight, (nw, nh), interpolation=cv2.INTER_NEAREST)
+        c_pad[oy:oy + nh, ox:ox + nw] = cv2.resize(pad, (nw, nh), interpolation=cv2.INTER_NEAREST)
+        sx, sy = nw / w, nh / h
+        tx, ty = ox / w, oy / h
+        fx, fy, cx, cy = K_norm
+        K = (fx * sx, fy * sy, cx * sx + tx, cy * sy + ty)
+        return c_rgb, c_dep, c_w, c_pad, K, (sx, tx, sy, ty)
+
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         r = self.rows[idx]
-        bgr = cv2.imread(r["img"], cv2.IMREAD_COLOR)
+        # b20 ownar: own rows read the aspect-true v2 cache (fallback: the stretched copy)
+        cache = self.v2cache.get(r["id"]) if (self.v2cache and r["source"] == "own") else None
+        bgr = cv2.imread(cache["img"] if cache else r["img"], cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-        d16 = cv2.imread(r["depth"], cv2.IMREAD_UNCHANGED)
+        d16 = cv2.imread(cache["depth"] if cache else r["depth"], cv2.IMREAD_UNCHANGED)
         depth_m = d16.astype(np.float32) / 1000.0
+        pad = np.zeros(depth_m.shape, np.uint8) if self.emit_pad else None
 
         is_gt = str(r.get("is_gt", "0")) in ("1", "True", "true")
         is_own = r["source"] == "own"
@@ -253,7 +407,7 @@ class MultiSourceDataset(Dataset):
         # per-pixel weight channel, composed from up to three factors
         weight = np.ones_like(depth_m)
         if is_own and self.conf_mode == "rank" and r.get("conf"):           # S6
-            c8 = cv2.imread(r["conf"], cv2.IMREAD_UNCHANGED)
+            c8 = cv2.imread(cache["conf"] if cache else r["conf"], cv2.IMREAD_UNCHANGED)
             if c8 is not None:
                 weight *= self._rank_normalize(c8.astype(np.float32), self.conf_floor)
         if is_own and self.use_taskw:                                        # S7 region weighting
@@ -294,7 +448,23 @@ class MultiSourceDataset(Dataset):
 
         # ── S5: cross-context crop (shared-context distillation, metric-preserving) ──
         fx, fy, cx, cy = self._row_intrinsics(r)
-        if self.crop_p > 0 and np.random.rand() < self.crop_p:
+        if cache is not None:                                                # b20 C3a ownar
+            hc, wc = depth_m.shape
+            kn = self._own_k_norm(r["id"], r)
+            K_px = (kn[0] * wc, kn[1] * hc, kn[2] * wc, kn[3] * hc)
+            rgb, depth_m, weight, pad, K_px, (sx0, dx0, sy0, dy0) = self._crop_or_pad_to(
+                self.th, self.tw, rgb, depth_m, weight, pad, K_px, train=self.augment)
+            fx, fy = K_px[0] / self.tw, K_px[1] / self.th
+            cx, cy = K_px[2] / self.tw, K_px[3] / self.th
+            n_boxes = self._affine_boxes(boxes, box_dists, box_sizes, n_boxes,
+                                         wc / self.tw, (dx0 - sx0) / self.tw,
+                                         hc / self.th, (dy0 - sy0) / self.th)
+        geom = self._draw_geom_mode()
+        if geom == "fov":                                                    # b20 C3b uncrop
+            rgb, depth_m, weight, pad, (fx, fy, cx, cy), (sx, tx, sy, ty) = self._fov_uncrop(
+                rgb, depth_m, weight, pad, (fx, fy, cx, cy))
+            n_boxes = self._affine_boxes(boxes, box_dists, box_sizes, n_boxes, sx, tx, sy, ty)
+        if geom == "s5":
             s = np.random.uniform(self.crop_min_scale, 0.9)                  # linear scale
             h, w = depth_m.shape
             ch, cw = int(round(h * s)), int(round(w * s))
@@ -303,6 +473,8 @@ class MultiSourceDataset(Dataset):
             rgb = rgb[y0:y0 + ch, x0:x0 + cw]
             depth_m = depth_m[y0:y0 + ch, x0:x0 + cw]
             weight = weight[y0:y0 + ch, x0:x0 + cw]
+            if pad is not None:
+                pad = pad[y0:y0 + ch, x0:x0 + cw]
             # metric depth values are crop-invariant; intrinsics change with the FOV:
             nx0, ny0, nw, nh = x0 / w, y0 / h, cw / w, ch / h
             fx, fy = fx / nw, fy / nh
@@ -328,6 +500,8 @@ class MultiSourceDataset(Dataset):
             rgb = cv2.resize(rgb, (self.tw, self.th), interpolation=cv2.INTER_AREA)
             depth_m = cv2.resize(depth_m, (self.tw, self.th), interpolation=cv2.INTER_NEAREST)
             weight = cv2.resize(weight, (self.tw, self.th), interpolation=cv2.INTER_NEAREST)
+            if pad is not None:
+                pad = cv2.resize(pad, (self.tw, self.th), interpolation=cv2.INTER_NEAREST)
         elif rgb.shape[:2] != (self.th, self.tw):
             rgb = cv2.resize(rgb, (self.tw, self.th), interpolation=cv2.INTER_AREA)
 
@@ -337,6 +511,8 @@ class MultiSourceDataset(Dataset):
                 rgb = np.ascontiguousarray(rgb[:, ::-1, :])
                 depth_m = np.ascontiguousarray(depth_m[:, ::-1])
                 weight = np.ascontiguousarray(weight[:, ::-1])
+                if pad is not None:
+                    pad = np.ascontiguousarray(pad[:, ::-1])
                 flipped = True
                 if n_boxes:
                     b = boxes[:n_boxes].copy()
@@ -349,6 +525,8 @@ class MultiSourceDataset(Dataset):
 
         dmin, dmax = float(r["dmin"]), float(r["dmax"])
         valid = np.isfinite(depth_m) & (depth_m >= dmin) & (depth_m <= dmax)
+        if pad is not None:
+            valid &= pad == 0                       # synthetic pad is never supervised
         log_depth = np.zeros_like(depth_m)
         log_depth[valid] = np.log(depth_m[valid])
 
@@ -372,6 +550,8 @@ class MultiSourceDataset(Dataset):
             "box_sizes": torch.from_numpy(box_sizes).float(),
             "box_count": int(n_boxes),
         }
+        if pad is not None:                         # b20 only (absent otherwise: b10 parity)
+            out["pad"] = torch.from_numpy(np.ascontiguousarray(pad)[None]).to(torch.uint8)
         if self.use_intrinsics:
             if flipped:
                 cx = 1.0 - cx
