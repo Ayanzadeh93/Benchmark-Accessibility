@@ -18,7 +18,7 @@ import torch
 
 from common.io_utils import load_config
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import DEFAULT_K, build_student, needs_intrinsics
 
 DISP_H, DISP_W = 384, 512
 
@@ -40,6 +40,8 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--n", type=int, default=12)
     ap.add_argument("--ckpt", default="")
+    ap.add_argument("--student-k", default="none", choices=["none", "default"],
+                    help="A05: none (historical; K=None, FiLM off) or default (pass DEFAULT_K)")
     args = ap.parse_args()
     cfg = load_config(args.config)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -48,6 +50,9 @@ def main():
     ck = torch.load(ckpt, map_location=device, weights_only=False)
     model = build_student(cfg).to(device).eval()
     model.load_state_dict(ck["model"])
+    intr = None
+    if args.student_k == "default" and needs_intrinsics(cfg["student"]):
+        intr = torch.tensor([DEFAULT_K], dtype=torch.float32, device=device)   # assumed default K
 
     with open(cfg["splits"]["file"], "r", encoding="utf-8") as f:
         stems = json.load(f)[args.split][: args.n]
@@ -74,7 +79,8 @@ def main():
         x = (rgb_disp.astype(np.float32) / 255.0 - IMAGENET_MEAN) / IMAGENET_STD
         x = torch.from_numpy(np.ascontiguousarray(np.transpose(x, (2, 0, 1)))).float()[None].to(device)
         with torch.no_grad():
-            stud_m = model.infer_metres(x)[0, 0].cpu().numpy()
+            stud_m = (model.infer_metres(x) if intr is None
+                      else model.infer_metres(x, intr))[0, 0].cpu().numpy()
 
         # shared scale from teacher robust percentiles
         vmin, vmax = np.percentile(teach_m, 2), np.percentile(teach_m, 98)

@@ -1,0 +1,97 @@
+{
+  "epoch": 1,
+  "val_absrel": 0.2659466975674733,
+  "cfg": {
+    "data": {
+      "root": "C:/Tim/nature/database/Fianl Version",
+      "images_dir": "C:/Tim/nature/database/Fianl Version/images",
+      "detection_source": "detection_ensemble",
+      "detection_ensemble_metadata": "C:/Tim/nature/database/Fianl Version/Detection/Detection_ensemble_conf040/metadata",
+      "yolo_labels_dir": "C:/Tim/nature/database/Fianl Version/labels",
+      "yolo_classes_file": "",
+      "image_exts": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".bmp",
+        ".webp"
+      ]
+    },
+    "teacher": {
+      "checkpoints": [
+        "lpiccinelli/unidepth-v2-vitl14",
+        "lpiccinelli/unidepth-v2-vitb14",
+        "lpiccinelli/unidepth-v2-vits14"
+      ],
+      "device": "cuda",
+      "infer_longest_side": 1280,
+      "save_longest_side": 1024,
+      "depth_clip_m": 60.0,
+      "sample_inset_frac": 0.2,
+      "uncertainty_std_m": 1.0,
+      "proximity_warn_m": 1.0,
+      "min_box_conf": 0.0
+    },
+    "output": {
+      "root": "C:/Tim/nature/unidepth2d/outputs",
+      "depth_dir": "C:/Tim/nature/unidepth2d/outputs/depth_mm",
+      "conf_dir": "C:/Tim/nature/unidepth2d/outputs/conf",
+      "objects_dir": "C:/Tim/nature/unidepth2d/outputs/objects",
+      "manifest_csv": "C:/Tim/nature/unidepth2d/outputs/manifest.csv",
+      "run_summary": "C:/Tim/nature/unidepth2d/outputs/run_summary.json"
+    },
+    "splits": {
+      "file": "C:/Tim/nature/unidepth2d/outputs/splits.json",
+      "val_frac": 0.1,
+      "test_frac": 0.05,
+      "seed": 1234
+    },
+    "data_gt": {
+      "root": "C:/Tim/nature/unidepth2d/outputs/data_gt",
+      "manifest": "C:/Tim/nature/unidepth2d/outputs/data_gt/manifest.csv",
+      "mix": {
+        "own": 0.4,
+        "nyu": 0.4,
+        "sun": 0.2
+      },
+      "samples_per_epoch": 12000,
+      "val_frac": 0.03,
+      "seed": 1234
+    },
+    "student": {
+      "backbone": "efficientvit_b1.r224_in1k",
+      "pretrained_backbone": true,
+      "decoder_channels": 96,
+      "train_size": [
+        480,
+        640
+      ],
+      "depth_min_m": 0.2,
+      "depth_max_m": 30.0,
+      "use_intrinsics": true
+    },
+    "distill": {
+      "device": "cuda",
+      "amp": true,
+      "batch_size": 4,
+      "grad_accum": 3,
+      "epochs": 2,
+      "lr": 0.0003,
+      "weight_decay": 0.01,
+      "ema_decay": 0.999,
+      "num_workers": 4,
+      "loss": {
+        "silog_weight": 1.0,
+        "silog_lambda": 0.85,
+        "grad_weight": 0.5,
+        "grad_scales": 4,
+        "ssi_weight": 0.0,
+        "obj_dist_weight": 0.3
+      },
+      "use_teacher_confidence": false,
+      "checkpoints_dir": "C:/Tim/nature/unidepth2d/outputs/checkpoints\\pilot_s7",
+      "task_weight_maps": true
+    }
+  },
+  "note": ""
+}

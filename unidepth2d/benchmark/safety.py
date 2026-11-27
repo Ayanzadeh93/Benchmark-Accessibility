@@ -1054,7 +1054,8 @@ def run_safety_eval(model, samples: Iterable, cfg: Optional[Dict] = None, *, int
     """One pass over ``samples`` (EvalSample-like: id, rgb, gt, valid, K, max_depth).
 
     camera_mode "gt-k" passes sample.K to the model; any other mode passes None and leaves
-    the default-K policy to the runner (run_bench contract). With calibration_samples, SF3/SF4
+    the default-K policy to the runner (run_bench contract; the CLI builds 'default-k'
+    students with k_none_policy='default_k', see _build). With calibration_samples, SF3/SF4
     calibrate on that set (split_kind "cross-dataset"); otherwise a deterministic crc32 split
     by group (or id) is used and labelled development.
     """
@@ -1192,8 +1193,12 @@ def _loaders() -> Dict:
 
 
 def _build(spec: str, device: str = "cpu", camera_mode: str = "none"):
+    """camera_mode 'default-k' (A05) builds torch students with k_none_policy='default_k', so
+    the K-less predict() assumes DEFAULT_K for rays/FiLM/k_embed/cstm and is no longer
+    identical to 'none' (legacy: FiLM off). Such students carry a '+kdef' name suffix."""
     from benchmark.run_bench import build_model
-    return build_model(spec, device, camera_mode == "gt-k", None)
+    policy = "default_k" if camera_mode == "default-k" else "legacy"
+    return build_model(spec, device, camera_mode == "gt-k", None, k_none_policy=policy)
 
 
 def _load_id_map(path: str) -> Optional[Dict[str, str]]:

@@ -190,5 +190,108 @@
     "select_metric": "gt",
     "params_M": 5.04,
     "best_val_absrel": 0.11225000000000002
+  },
+  "smoke": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/abl_smoke_dsh/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 4.97,
+    "best_val_absrel": 0.4068
+  },
+  "b20dws-ft-ctrl": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws_ft_ctrl/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11025
+  },
+  "b20dws-ft-hyper": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws_ft_hyper/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.35,
+      "nyu": 0.35,
+      "sun": 0.15,
+      "xhyper": 0.15
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11435000000000001
+  },
+  "b20dws-ft2-all": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws_ft2_all/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.26,
+      "nyu": 0.26,
+      "sun": 0.13,
+      "xarkit": 0.25,
+      "xhyper": 0.1
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11245
+  },
+  "b20dws-ft2-ctrl": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws_ft2_ctrl/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11170000000000001
+  },
+  "b20dws-ft2-rest": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/b20dws_ft2_rest/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.3,
+      "nyu": 0.35,
+      "sun": 0.15,
+      "xarkit": 0.15,
+      "xhyper": 0.05
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.11230000000000001
+  },
+  "abl-rep1": {
+    "ckpt": "C:/Tim/nature/unidepth2d/outputs/checkpoints/abl_rep1/best.pt",
+    "backbone": "efficientvit_b1.r224_in1k",
+    "recipe": "s4,s5,ray,range,prox,ownar,fov,cstm,dsh,trim,dws4,selgt",
+    "train_mix": {
+      "own": 0.4,
+      "nyu": 0.4,
+      "sun": 0.2
+    },
+    "zero_shot_clean": false,
+    "select_metric": "gt",
+    "params_M": 5.04,
+    "best_val_absrel": 0.1091
   }
 }

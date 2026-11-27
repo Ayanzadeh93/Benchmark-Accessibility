@@ -12,6 +12,9 @@ Derived artifacts (OCMR GT caches, gold manifests) stay in data_bench/.
          (the NYU-origin frames) EXCLUDED per UniDepth's stated protocol.
          variants: bfx (`depth_bfx`, refined) | raw (`depth`); per-image intrinsics.txt.
   ibims  IBims-1 core (mat files: float depth + invalid/transparency masks + calib).
+  diode  DIODE val/indoors (325; FARO depth + validity mask; fixed DIODE K), 0.005/50.
+  eth3d  ETH3D high-res training, 7 indoor scenes (219 DSLR; laser GT aligned to the distorted
+         jpgs; per-image COLMAP pinhole K); evaluated at 1/4 resolution, 0.005/50.
 
 Every sample -> EvalSample(id, rgb, gt, valid, K, min_depth, max_depth).
 `python -m benchmark.datasets_tier1 inspect <name>` prints structure/counts for sanity.
@@ -327,7 +330,150 @@ def iter_kitti_obj(root: str = KITTI_ROOT, limit: int = 0) -> Iterator[EvalSampl
             return
 
 
-LOADERS = {"nyu": iter_nyu, "sun": iter_sun, "ibims": iter_ibims, "kitti_obj": iter_kitti_obj}
+# ──────────────────────────────────────────────────────────────────────────────
+# DIODE val / indoors — 325 images, FARO laser GT (benchmark/fetch_v2.py diode_indoor)
+# ──────────────────────────────────────────────────────────────────────────────
+
+DIODE_DIR = os.path.join(DATASETS_ROOT, "DIODE")
+# DIODE camera (dataset authors, github.com/diode-dataset/diode-devkit issue #9; same values in
+# Metric3D / UniDepth configs): fx 886.81, fy 927.06, cx 512, cy 384 at 1024x768.
+DIODE_K = np.array([[886.81, 0.0, 512.0], [0.0, 927.06, 384.0], [0.0, 0.0, 1.0]])
+DIODE_MIN_D, DIODE_MAX_D = 0.005, 50.0       # scanner range; mask already drops no-return pixels
+
+
+def list_diode(root: str = "") -> list[str]:
+    """Sorted RGB paths of DIODE val/indoors that have both _depth.npy and _depth_mask.npy."""
+    base = os.path.join(root or DIODE_DIR, "val", "indoors")
+    out = []
+    for dp, _, fs in os.walk(base):
+        for f in fs:
+            if f.endswith(".png"):
+                stem = os.path.join(dp, f[:-4])
+                if os.path.isfile(stem + "_depth.npy") and os.path.isfile(stem + "_depth_mask.npy"):
+                    out.append(os.path.join(dp, f))
+    return sorted(out)
+
+
+def iter_diode(root: str = "", limit: int = 0) -> Iterator[EvalSample]:
+    import cv2
+    n = 0
+    for p in list_diode(root):
+        stem = p[:-4]
+        bgr = cv2.imread(p, cv2.IMREAD_COLOR)
+        if bgr is None:
+            continue
+        gt = np.load(stem + "_depth.npy").astype(np.float32).squeeze()
+        mask = np.load(stem + "_depth_mask.npy").astype(bool).squeeze()
+        valid = mask & np.isfinite(gt) & (gt > DIODE_MIN_D)
+        gt = np.where(np.isfinite(gt), gt, 0.0).astype(np.float32)
+        if gt.shape != bgr.shape[:2] or valid.sum() < 50:
+            continue
+        yield EvalSample("diode_" + os.path.basename(stem), cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB),
+                         gt, valid, DIODE_K.copy(), DIODE_MIN_D, DIODE_MAX_D)
+        n += 1
+        if limit and n >= limit:
+            return
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ETH3D high-res multi-view TRAINING, 7 indoor scenes — 219 DSLR images, laser-scan GT
+# ──────────────────────────────────────────────────────────────────────────────
+
+ETH3D_DIR = os.path.join(DATASETS_ROOT, "ETH3D")
+ETH3D_SCENES = ("delivery_area", "kicker", "office", "pipes", "relief", "relief_2", "terrains")
+ETH3D_W, ETH3D_H = 6048, 4032                 # raw float32 depth dumps (row-major, little-endian)
+ETH3D_DOWN = 4                                # evaluate at 1512x1008 (see iter_eth3d docstring)
+ETH3D_MIN_D, ETH3D_MAX_D = 0.005, 50.0
+
+
+def _eth3d_cameras(scene_dir: str) -> dict:
+    """{image basename: (fx, fy, cx, cy, W, H)} from the COLMAP text model of the DISTORTED jpgs.
+
+    The jpg archive ships dslr_calibration_jpg/{cameras,images}.txt. The camera model is
+    THIN_PRISM_FISHEYE; only its pinhole part (fx fy cx cy) is used (distortion ignored, the GT
+    depth is aligned to the distorted image pixel-for-pixel, so per-pixel metrics are exact)."""
+    cal = None
+    for c in ("dslr_calibration_jpg", "dslr_calibration_undistorted"):
+        if os.path.isdir(os.path.join(scene_dir, c)):
+            cal = os.path.join(scene_dir, c)
+            break
+    if cal is None:
+        return {}
+    cams = {}
+    for line in open(os.path.join(cal, "cameras.txt"), encoding="utf-8"):
+        if line.startswith("#") or not line.strip():
+            continue
+        t = line.split()
+        cams[t[0]] = (float(t[4]), float(t[5]), float(t[6]), float(t[7]), int(t[2]), int(t[3]))
+    out = {}
+    lines = [ln for ln in open(os.path.join(cal, "images.txt"), encoding="utf-8")
+             if not ln.startswith("#")]
+    for ln in lines[0::2]:                    # COLMAP images.txt: pose line, then 2D points line
+        t = ln.split()
+        if len(t) >= 10 and t[8] in cams:
+            out[os.path.basename(t[9])] = cams[t[8]]
+    return out
+
+
+def list_eth3d(root: str = "") -> list[tuple]:
+    """[(scene, rgb_path, depth_path, (fx,fy,cx,cy,W,H))] for every image with GT + calibration."""
+    base = root or ETH3D_DIR
+    out = []
+    for s in ETH3D_SCENES:
+        sd = os.path.join(base, s)
+        img_dir = os.path.join(sd, "images", "dslr_images")
+        dep_dir = os.path.join(sd, "ground_truth_depth", "dslr_images")
+        if not (os.path.isdir(img_dir) and os.path.isdir(dep_dir)):
+            continue
+        cams = _eth3d_cameras(sd)
+        for f in sorted(os.listdir(dep_dir)):
+            rp = os.path.join(img_dir, f)
+            if os.path.isfile(rp) and f in cams:
+                out.append((s, rp, os.path.join(dep_dir, f), cams[f]))
+    return out
+
+
+def iter_eth3d(root: str = "", limit: int = 0, down: int = ETH3D_DOWN) -> Iterator[EvalSample]:
+    """ETH3D indoor. GT dumps are float32 6048x4032 (inf/0 = no GT) aligned to the DISTORTED jpg.
+
+    Evaluated at 1/`down` resolution (default 4 -> 1512x1008, ~1.5 MP): RGB INTER_AREA, depth = the
+    nearest valid laser point in every down x down block (GT is sparse: 7-16 % of full-res pixels,
+    60-85 % of 4x4 blocks; no interpolation), K scaled with the pixel-centre convention. Every model only sees <=0.6 MP internally, so this changes
+    no prediction materially and keeps per-image metrics tractable (24 MP -> 1.5 MP)."""
+    import cv2
+    n = 0
+    for scene, rp, dp, (fx, fy, cx, cy, W, H) in list_eth3d(root):
+        raw = np.fromfile(dp, dtype="<f4")
+        if raw.size != W * H:
+            continue
+        gt = raw.reshape(H, W)
+        bgr = cv2.imread(rp, cv2.IMREAD_COLOR)
+        if bgr is None or bgr.shape[:2] != (H, W):
+            continue
+        if down > 1:
+            h2, w2 = H // down, W // down
+            bgr = cv2.resize(bgr, (w2, h2), interpolation=cv2.INTER_AREA)
+            # GT is projected laser points (7-16 % of full-res pixels): keep the NEAREST valid point
+            # per down x down block (z-buffer semantics, as _velo_to_depth), so no GT point is dropped
+            blk = np.where(np.isfinite(gt) & (gt > 0), gt, np.inf)[:h2 * down, :w2 * down]
+            gt = blk.reshape(h2, down, w2, down).min(axis=(1, 3))
+            fx, fy = fx / down, fy / down
+            cx, cy = (cx + 0.5) / down - 0.5, (cy + 0.5) / down - 0.5
+        valid = np.isfinite(gt) & (gt > ETH3D_MIN_D)
+        gt = np.where(np.isfinite(gt), gt, 0.0).astype(np.float32)
+        if valid.sum() < 50:
+            continue
+        K = np.array([[fx, 0.0, cx], [0.0, fy, cy], [0.0, 0.0, 1.0]])
+        yield EvalSample(f"eth3d_{scene}_{os.path.splitext(os.path.basename(rp))[0]}",
+                         cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB), np.ascontiguousarray(gt), valid, K,
+                         ETH3D_MIN_D, ETH3D_MAX_D)
+        n += 1
+        if limit and n >= limit:
+            return
+
+
+LOADERS = {"nyu": iter_nyu, "sun": iter_sun, "ibims": iter_ibims, "kitti_obj": iter_kitti_obj,
+           "diode": iter_diode, "eth3d": iter_eth3d}
 
 
 def _inspect(name: str):

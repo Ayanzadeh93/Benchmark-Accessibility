@@ -39,6 +39,23 @@ class StudentConfig:
     rep4: bool = False                 # C5 rep4: RepDWSep for smooths[0] and head[0]
     dws4: bool = False                 # C5' dws4: plain DW3x3-BN-ReLU-PW1x1-BN-ReLU at the same two
                                        # sites (same deploy MACs as fused rep4, no multi-branch training)
+    # A05: what forward(x, intrinsics=None) means. "legacy" (default, bit-identical to the old
+    # code): FiLM is skipped while rays / k_embed / cstm fall back to DEFAULT_K. "default_k":
+    # K is resolved to DEFAULT_K ONCE at the top of forward and used by every consumer, so
+    # forward(x, None) == forward(x, DEFAULT_K) exactly. Outputs with a given K never change.
+    k_none_policy: str = "legacy"
+
+
+# Normalised (fx/W, fy/H, cx/W, cy/H) assumed when no camera K is given ("assumed default K",
+# never "uncalibrated"). The single source of truth; DepthStudent._DEFAULT_K is this object.
+DEFAULT_K = (0.8, 1.08, 0.5, 0.5)
+K_NONE_POLICIES = ("legacy", "default_k")
+
+
+def _check_k_none_policy(policy: str) -> str:
+    if policy not in K_NONE_POLICIES:
+        raise ValueError(f"k_none_policy must be one of {K_NONE_POLICIES}, got {policy!r}")
+    return policy
 
 
 SCALE_EMBED_DIM = 16                   # e(k) width
@@ -88,10 +105,13 @@ class DepthStudent(nn.Module):
     cstm_fc = 0.0
     rep4 = False
     dws4 = False
+    k_none_policy = "legacy"
 
     def __init__(self, cfg: StudentConfig = StudentConfig()):
         super().__init__()
         self.cfg = cfg
+        # plain attribute (no parameter / buffer / RNG use): init weights and state_dict unchanged
+        self.k_none_policy = _check_k_none_policy(getattr(cfg, "k_none_policy", "legacy"))
         if cfg.scale_head and (int(cfg.bins) > 0 or cfg.affine_head):
             raise ValueError("scale_head (dsh) is incompatible with bins / affine_head")
         in_chans = 6 if cfg.ray_map else 3
@@ -191,7 +211,12 @@ class DepthStudent(nn.Module):
                 # constant map b2 + c (spec C1 'at init the output is a constant map')
                 self.head[-1].weight[:1].zero_()
 
-    _DEFAULT_K = (0.8, 1.08, 0.5, 0.5)
+    _DEFAULT_K = DEFAULT_K
+
+    def set_k_none_policy(self, policy: str) -> "DepthStudent":
+        """Switch the K=None behaviour at eval time (see StudentConfig.k_none_policy)."""
+        self.k_none_policy = _check_k_none_policy(policy)
+        return self
 
     def _build_rays(self, B, H, W, intrinsics, device, dtype):
         """Per-pixel unit camera rays from normalized intrinsics (fx/W, fy/H, cx/W, cy/H)."""
@@ -223,6 +248,9 @@ class DepthStudent(nn.Module):
         in_hw = x.shape[-2:]
         if return_parts and not self.scale_head:
             raise ValueError("return_parts=True requires the dsh scale head")
+        if intrinsics is None and self.k_none_policy == "default_k":
+            # A05: one K for rays, FiLM, k_embed and cstm (legacy skips FiLM for K=None)
+            intrinsics = self._k_or_default(None, x.shape[0], x.device, x.dtype)
         if self.ray_map:
             rays = self._build_rays(x.shape[0], in_hw[0], in_hw[1], intrinsics, x.device, x.dtype)
             x = torch.cat([x, rays], dim=1)
@@ -372,4 +400,5 @@ def build_student(cfg: dict) -> DepthStudent:
         cstm_fc=float(s.get("cstm_fc", 0.0)),
         rep4=bool(s.get("rep4", False)),
         dws4=bool(s.get("dws4", False)),
+        k_none_policy=str(s.get("k_none_policy", "legacy")),
     ))

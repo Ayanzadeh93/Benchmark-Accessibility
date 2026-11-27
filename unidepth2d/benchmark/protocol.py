@@ -134,6 +134,12 @@ def per_image_depth_metrics(
         for align_name, align in (("ssi", ssi_align), ("si", si_align)):
             pa = np.clip(align(g, p), 1e-6, None)
             out[f"{name}_{align_name}"] = float(fn(g, pa))
+    # log-least-squares SCALE-only alignment (the alignment Ultralytics' YOLO26-Depth pages state):
+    # s = exp(mean(log g - log p)). Uses GT -> an evaluation-time oracle, report next to raw numbers only.
+    pl = np.clip(p * np.exp(np.mean(np.log(g) - np.log(p))), 1e-6, None)
+    out["d1_lsl"] = _delta(g, pl, 1.0)
+    out["arel_lsl"] = float((np.abs(g - pl) / g).mean())
+    out["rmse_lsl"] = float(np.sqrt(((g - pl) ** 2).mean()))
     return out
 
 

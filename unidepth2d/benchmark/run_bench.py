@@ -83,13 +83,15 @@ class OfficialModel:
 class StudentModelRunner:
     """Registry student: fixed train-size inference, bilinear upsample (deploy mode)."""
 
-    def __init__(self, ckpt_path: str, device: str):
-        from distill.student import build_student, needs_intrinsics
+    def __init__(self, ckpt_path: str, device: str, k_none_policy: str = "legacy"):
+        from distill.student import DEFAULT_K, build_student, needs_intrinsics
         from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
         ck = torch.load(ckpt_path, map_location=device, weights_only=False)
         cfg = ck["cfg"]
         self.model = build_student(cfg).to(device).eval()
         self.model.load_state_dict(ck["model"])
+        # A05: what a K-less predict() means ("legacy" = old behaviour, FiLM off for K=None)
+        self.model.set_k_none_policy(k_none_policy)
         s = cfg["student"]
         self.th, self.tw = int(s["train_size"][0]), int(s["train_size"][1])
         self.use_intr = needs_intrinsics(s)
@@ -100,26 +102,67 @@ class StudentModelRunner:
         if has_unfused_rep(self.model):
             g = torch.Generator().manual_seed(0)
             x = torch.randn(1, 3, self.th, self.tw, generator=g).to(device)
-            k = torch.tensor([[0.8, 1.08, 0.5, 0.5]], device=device) if self.use_intr else None
+            k = torch.tensor([DEFAULT_K], device=device) if self.use_intr else None
             fuse_with_parity(self.model, x, k)
         self.mean, self.std = IMAGENET_MEAN, IMAGENET_STD
         self.device = device
         parent = os.path.basename(os.path.dirname(ckpt_path))
         self.name = f"student-{parent if parent != 'checkpoints' else 'base'}"
+        if k_none_policy != "legacy":
+            self.name += "+kdef"          # never shares a result filename with legacy rows
 
-    @torch.inference_mode()
-    def predict(self, rgb: np.ndarray, K: np.ndarray | None):
+    def set_inference_options(self, flip: bool = False, scales=None, size=None):
+        """Optional post-hoc inference options (no retraining), evaluation-only:
+        flip   : also run the horizontally mirrored image (cx -> 1-cx) and average in log space;
+        scales : list of (H, W) sizes, multi-scale, averaged in log space at the base size;
+        size   : single inference size (H, W) replacing the train size."""
+        self.flip = bool(flip)
+        if size is not None:
+            self.th, self.tw = int(size[0]), int(size[1])
+        self.scales = [tuple(s) for s in scales] if scales else None
+        tag = ""
+        if size is not None:
+            tag += f"+sz{self.th}x{self.tw}"
+        if self.scales:
+            tag += "+ms"
+        if self.flip:
+            tag += "+flip"
+        self.name += tag
+
+    def _one(self, rgb, K, th, tw, flip):
         oh, ow = rgb.shape[:2]
-        rz = cv2.resize(rgb, (self.tw, self.th), interpolation=cv2.INTER_AREA)
+        img = rgb[:, ::-1] if flip else rgb
+        rz = cv2.resize(np.ascontiguousarray(img), (tw, th), interpolation=cv2.INTER_AREA)
         rz = (rz.astype(np.float32) / 255.0 - self.mean) / self.std
         t = torch.from_numpy(np.ascontiguousarray(rz.transpose(2, 0, 1)))[None].to(self.device)
         intr = None
         if self.use_intr and K is not None:
-            # normalized (fx/W, fy/H, cx/W, cy/H) of the ORIGINAL image
+            # normalized (fx/W, fy/H, cx/W, cy/H) of the ORIGINAL image (cx mirrored for a flipped view)
+            cxn = K[0, 2] / ow
             intr = torch.tensor([[K[0, 0] / ow, K[1, 1] / oh,
-                                  K[0, 2] / ow, K[1, 2] / oh]],
+                                  (1.0 - cxn) if flip else cxn, K[1, 2] / oh]],
                                 dtype=torch.float32, device=self.device)
-        depth = self.model.infer_metres(t, intr)[0, 0].float().cpu().numpy()
+        d = self.model.infer_metres(t, intr)[0, 0].float().cpu().numpy()
+        return d[:, ::-1] if flip else d
+
+    @torch.inference_mode()
+    def predict(self, rgb: np.ndarray, K: np.ndarray | None):
+        scales = getattr(self, "scales", None) or [(self.th, self.tw)]
+        flips = (False, True) if getattr(self, "flip", False) else (False,)
+        if len(scales) == 1 and len(flips) == 1:
+            depth = self._one(rgb, K, scales[0][0], scales[0][1], False)
+            return {"depth": depth, "conf": None, "points": None}
+        base = None
+        logs = []
+        for (th, tw) in scales:
+            for fl in flips:
+                d = self._one(rgb, K, th, tw, fl)
+                if base is None:
+                    base = d.shape
+                elif d.shape != base:
+                    d = cv2.resize(np.ascontiguousarray(d), (base[1], base[0]), interpolation=cv2.INTER_LINEAR)
+                logs.append(np.log(np.clip(d, 1e-6, None)))
+        depth = np.exp(np.mean(logs, axis=0)).astype(np.float32)
         return {"depth": depth, "conf": None, "points": None}
 
 
@@ -143,12 +186,12 @@ class HybridSSDI:
 
     RANGE_LO, RANGE_HI, MIN_PX = 0.2, 8.0, 500
 
-    def __init__(self, spec_rest: str, device: str):
+    def __init__(self, spec_rest: str, device: str, k_none_policy: str = "legacy"):
         parts = spec_rest.split("+")
         if len(parts) != 3 or not parts[2].startswith("r"):
             raise SystemExit("hybrid spec must be <student_ckpt>+<donor>+r<level>")
         ckpt, donor, rlev = parts[0], parts[1], int(parts[2][1:])
-        self.student = StudentModelRunner(ckpt, device)
+        self.student = StudentModelRunner(ckpt, device, k_none_policy)
         self.donor = OfficialModel(donor, device, use_gt_cam=False, res_level=rlev)
         self.name = f"ssdi-{self.student.name.replace('student-', '')}+{self.donor.name}"
 
@@ -174,11 +217,11 @@ class QuantWeightStudent(StudentModelRunner):
     Activations and biases stay float - this is the "8-bit weights" storage scheme.
     """
 
-    def __init__(self, spec_rest: str, device: str):
+    def __init__(self, spec_rest: str, device: str, k_none_policy: str = "legacy"):
         mode, ckpt = spec_rest.split(":", 1)
         per_channel = not mode.endswith("pt")
         bits = int(mode[:-2] if mode.endswith("pt") else mode)
-        super().__init__(ckpt, device)
+        super().__init__(ckpt, device, k_none_policy)
         from edge.quant_sim import quantize_weights_
         self.quant_stats = quantize_weights_(self.model, bits=bits, per_channel=per_channel)
         self.name = f"{self.name}+w{bits}{'' if per_channel else 'pt'}"
@@ -232,21 +275,128 @@ class ExternalModel:
         return {"depth": depth, "conf": None, "points": points}
 
 
-def build_model(spec: str, device: str, use_gt_cam: bool, res_level: int | None = None):
+class Yolo26Depth:
+    """YOLO26-Depth (Ultralytics, AGPL-3.0) through its native predict(), zero-shot, single image.
+
+    Only importable in the isolated `depth_yolo` env (scripts/v2/setup_depth_yolo.ps1). Spec:
+    yolo26<n|s|m|l|x>-depth[@flip]. Weights from $YOLO26_WEIGHTS, else Z:/Models/yolo26, else
+    outputs/v2/weights/yolo26. Per docs.ultralytics.com/tasks/depth: input stretched to a square at
+    imgsz=768 (the trained size), result.depth.data = metres at input resolution, invalid <= 0;
+    released checkpoints carry their baked global calibration; no intrinsics input. Our harness
+    reports RAW metric depth plus the GT-aligned diagnostics (d1_si = median, d1_lsl = log-LS) the
+    vendor uses; '@flip' = horizontal-flip TTA (log-mean), no multi-scale.
+    """
+
+    def __init__(self, spec: str, device: str):
+        from ultralytics import YOLO
+        base, _, opts = spec.partition("@")
+        self.flip = "flip" in opts.split(",")
+        cands = [os.environ.get("YOLO26_WEIGHTS", ""), "Z:/Models/yolo26",
+                 os.path.join(os.path.dirname(__file__), "..", "outputs", "v2", "weights", "yolo26")]
+        path = next((os.path.join(c, base + ".pt") for c in cands
+                     if c and os.path.isfile(os.path.join(c, base + ".pt"))), None)
+        if path is None:
+            raise SystemExit(f"{base}.pt not found in {cands}; run scripts/v2/setup_depth_yolo.ps1")
+        self.model = YOLO(path)
+        self.device = 0 if device == "cuda" else "cpu"
+        self.name = base + "+768" + ("+flip" if self.flip else "")
+
+    def _one(self, bgr):
+        r = self.model.predict(bgr, imgsz=768, device=self.device, verbose=False)[0]
+        return r.depth.data.float().cpu().numpy()
+
+    def predict(self, rgb: np.ndarray, K: np.ndarray | None):
+        bgr = np.ascontiguousarray(rgb[..., ::-1])            # ultralytics numpy input is BGR
+        d = self._one(bgr)
+        if self.flip:
+            d2 = self._one(np.ascontiguousarray(bgr[:, ::-1]))[:, ::-1]
+            if d2.shape != d.shape:
+                d2 = cv2.resize(d2, (d.shape[1], d.shape[0]), interpolation=cv2.INTER_LINEAR)
+            d = np.exp(0.5 * (np.log(np.clip(d, 1e-6, None)) + np.log(np.clip(d2, 1e-6, None))))
+        return {"depth": d.astype(np.float32), "conf": None, "points": None}
+
+
+def build_model(spec: str, device: str, use_gt_cam: bool, res_level: int | None = None,
+                k_none_policy: str = "legacy"):
+    """k_none_policy (A05) only affects torch students (student:/hybrid:/q:) evaluated
+    WITHOUT a K; the default "legacy" reproduces every historical number."""
     if spec in OFFICIAL:
         return OfficialModel(spec, device, use_gt_cam, res_level)
     if spec in EXTERNAL:
         return ExternalModel(spec, device)
+    if spec.startswith("yolo26") and spec.split("@")[0].endswith("-depth"):
+        return Yolo26Depth(spec, device)
     if spec.startswith("student:"):
-        return StudentModelRunner(spec.split(":", 1)[1], device)
+        rest = spec.split(":", 1)[1]
+        opts = ""
+        if "@" in rest:                       # student:<ckpt>@flip,ms,size=576x768 (evaluation-only options)
+            rest, opts = rest.rsplit("@", 1)
+        m = StudentModelRunner(rest, device, k_none_policy)
+        if opts:
+            toks = [t for t in opts.split(",") if t]
+            size = None
+            for t in toks:
+                if t.startswith("size="):
+                    h, w = t[5:].split("x")
+                    size = (int(h), int(w))
+            ms = None
+            if "ms" in toks:
+                bh, bw = (size if size else (m.th, m.tw))
+                ms = [(bh, bw)] + [(int(round(bh * f / 32.0) * 32), int(round(bw * f / 32.0) * 32))
+                                   for f in (0.8, 1.2)]
+            m.set_inference_options(flip="flip" in toks, scales=ms, size=size)
+        return m
     if spec.startswith("hybrid:"):
-        return HybridSSDI(spec.split(":", 1)[1], device)
+        return HybridSSDI(spec.split(":", 1)[1], device, k_none_policy)
     if spec.startswith("q:"):
-        return QuantWeightStudent(spec.split(":", 1)[1], device)
+        return QuantWeightStudent(spec.split(":", 1)[1], device, k_none_policy)
     if spec.startswith("onnx:"):
         from edge.onnx_runner import OnnxStudent     # needs onnxruntime (depth_cmp env)
         return OnnxStudent(spec.split(":", 1)[1], device)
     raise SystemExit(f"unknown model spec: {spec}")
+
+
+BF1_LEGACY_NOTE = ("LEGACY boundary F1 (protocol.boundary_f1_si): skips thresholds/images "
+                   "where the prediction has no edge, biased upward; superseded by "
+                   "boundary_f1_v2 / boundary_f1_depthpro (A04)")
+
+
+def boundary_row(sid, gt, pred, valid) -> dict:
+    """A04 per-image boundary F1 row: legacy + v2 (both_empty='zero') + DepthPro SI-bF1
+    with valid=mask (extension) and valid=None (DepthPro reference). None = non-contributing."""
+    from benchmark import protocol_v2 as pv2
+    return {
+        "id": str(sid),
+        "bf1_si_legacy": protocol.boundary_f1_si(gt, pred, valid),
+        pv2.BF_KEY: pv2.boundary_f1_si_v2(gt, pred, valid, both_empty="zero"),
+        "bf1_depthpro_masked": pv2.si_boundary_f1_depthpro(pred, gt, valid=valid),
+        "bf1_depthpro_nomask": pv2.si_boundary_f1_depthpro(pred, gt, valid=None),
+    }
+
+
+def boundary_summary(rows) -> dict:
+    """Aggregate A04 rows with protocol_v2.aggregate_boundary_f1 (bf1 + n_contributing)."""
+    from benchmark import protocol_v2 as pv2
+    keys = ("bf1_si_legacy", pv2.BF_KEY, "bf1_depthpro_masked", "bf1_depthpro_nomask")
+    agg = {k: pv2.aggregate_boundary_f1([r[k] for r in rows]) for k in keys}
+    # Legacy None also covers "prediction has no edge", so n_no_gt_boundary is a misnomer there:
+    # expose the honest name n_dropped (kept the old field for key-set stability).
+    agg["bf1_si_legacy"]["n_dropped"] = agg["bf1_si_legacy"]["n_no_gt_boundary"]
+    agg["bf1_si_legacy"]["note"] = ("for the legacy key n_no_gt_boundary == n_dropped: counts "
+                                    "every dropped image (no GT edge OR no predicted edge)")
+    return {
+        "definitions": {
+            "bf1_si_legacy": BF1_LEGACY_NOTE,
+            pv2.BF_KEY: "protocol_v2.boundary_f1_si_v2, t=5..25 %, both_empty='zero'",
+            "bf1_depthpro_masked": "protocol_v2.si_boundary_f1_depthpro(valid=mask) - masked extension",
+            "bf1_depthpro_nomask": ("protocol_v2.si_boundary_f1_depthpro(valid=None) - DepthPro reference, "
+                                    "UNMASKED: GT holes (depth 0) count as edges; not a headline "
+                                    "number on datasets with GT holes (IBims, NYU) - use "
+                                    "bf1_depthpro_masked there"),
+        },
+        "aggregate": agg,
+        "per_image": list(rows),
+    }
 
 
 def main():
@@ -263,11 +413,25 @@ def main():
     ap.add_argument("--no-3d", action="store_true", help="skip F_A/chamfer even if possible")
     ap.add_argument("--save-per-image", action="store_true")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--out-dir", default="",
+                    help="write the JSON + summary.csv here instead of results_bench/ "
+                         "(e.g. results_rescore/)")
+    ap.add_argument("--k-none-policy", default="legacy", choices=["legacy", "default_k"],
+                    help="A05: torch students evaluated WITHOUT K: legacy (FiLM off, historical "
+                         "numbers) or default_k (assumed DEFAULT_K for rays/FiLM/k_embed/cstm)")
+    ap.add_argument("--device", default="", help="cpu|cuda (default: cuda if available)")
+    ap.add_argument("--no-k", action="store_true",
+                    help="do not pass the dataset K to the models (K-less 'assumed default K' "
+                         "eval of students); GT K is still used for the 3D metrics")
     args = ap.parse_args()
+    if args.no_k and args.gt_cam:
+        raise SystemExit("--no-k and --gt-cam are contradictory")
+    results_dir = os.path.abspath(args.out_dir) if args.out_dir else RESULTS_DIR
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    models = [build_model(m, device, args.gt_cam, args.res_level) for m in args.model]
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+    device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
+    models = [build_model(m, device, args.gt_cam, args.res_level, args.k_none_policy)
+              for m in args.model]
+    os.makedirs(results_dir, exist_ok=True)
 
     loader_kwargs = {}
     if args.variant:
@@ -275,7 +439,7 @@ def main():
     if args.limit:
         loader_kwargs["limit"] = args.limit
 
-    acc = {m.name: {"depth": [], "f3d": [], "ray_err": [], "unc": [], "bf1": []}
+    acc = {m.name: {"depth": [], "f3d": [], "ray_err": [], "unc": [], "bf1": [], "bf1_rows": []}
            for m in models}
     n_done = 0
     t0 = time.time()
@@ -284,7 +448,7 @@ def main():
         h, w = gt.shape
         gt_rays = protocol.rays_from_K(K, h, w) if K is not None else None
         for m in models:
-            out = m.predict(sample.rgb, K)
+            out = m.predict(sample.rgb, None if args.no_k else K)
             pred = out["depth"]
             if pred.shape != (h, w):
                 pred = cv2.resize(pred, (w, h), interpolation=cv2.INTER_LINEAR)
@@ -318,7 +482,9 @@ def main():
                 if u:
                     acc[m.name]["unc"].append(u)
             if args.boundary:
-                bf1 = protocol.boundary_f1_si(gt, pred, valid)
+                brow = boundary_row(sample.id, gt, pred, valid)
+                acc[m.name]["bf1_rows"].append(brow)
+                bf1 = brow["bf1_si_legacy"]          # == protocol.boundary_f1_si (unchanged)
                 if bf1 is not None:
                     acc[m.name]["bf1"].append(bf1)
         n_done += 1
@@ -342,13 +508,20 @@ def main():
             "uncertainty": protocol.aggregate(a["unc"]) if a["unc"] else None,
             "boundary_f1_si": float(np.mean(a["bf1"])) if a["bf1"] else None,
         }
+        if args.boundary:
+            # A04 (additive): the legacy key above is kept unchanged and labelled legacy here
+            result["boundary_f1_si_legacy_note"] = BF1_LEGACY_NOTE
+            result["boundary_f1"] = boundary_summary(a["bf1_rows"])
+        if args.k_none_policy != "legacy" or args.no_k:
+            result["k_none_policy"] = args.k_none_policy
+            result["k_passed_to_model"] = not args.no_k
         if getattr(m, "quant_stats", None):
             result["quantization"] = m.quant_stats
         if args.save_per_image:
             result["per_image"] = a["depth"]
-        tag = f"__{args.tag}" if args.tag else ""
+        tag = (f"__{args.tag}" if args.tag else "") + ("__noK" if args.no_k else "")
         var = f"-{args.variant}" if args.variant else ""
-        out_path = os.path.join(RESULTS_DIR,
+        out_path = os.path.join(results_dir,
                                 f"{args.dataset}{var}__{m.name}{tag}.json")
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
@@ -359,7 +532,7 @@ def main():
               f"rho_a={result['rho_a']}")
         print("wrote", out_path)
 
-        csv_path = os.path.join(RESULTS_DIR, "summary.csv")
+        csv_path = os.path.join(results_dir, "summary.csv")
         new = not os.path.exists(csv_path)
         with open(csv_path, "a", newline="", encoding="utf-8") as f:
             wcsv = csv.writer(f)

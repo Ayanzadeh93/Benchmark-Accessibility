@@ -96,6 +96,26 @@ def bench_official(label, cls_name, hub, device, res_level=None):
                 peak_vram_GiB=round(peak, 2))
 
 
+def bench_external(spec, device):
+    """MoGe-2 / UniK3D through run_bench.ExternalModel's exact inference path (r9, 640x480 uint8)."""
+    from benchmark.run_bench import ExternalModel
+    em = ExternalModel(spec, device)
+    params = sum(p.numel() for p in em.model.parameters()) / 1e6
+    img = torch.randint(0, 255, (3, *INPUT_HW), dtype=torch.uint8, device=device)
+
+    def run():
+        with torch.inference_mode():
+            if em.kind == "moge":
+                em.model.infer(img.float() / 255.0, resolution_level=9, apply_mask=False)
+            else:
+                em.model.infer(img)
+
+    dt, peak = _timed(run)
+    return dict(model=em.name, params_M=round(params, 2),
+                input=f"{INPUT_HW[1]}x{INPUT_HW[0]} uint8, native infer()", res_level=9,
+                ms=round(dt * 1000, 1), fps=round(1 / dt, 1), peak_vram_GiB=round(peak, 2))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="config.yaml")
@@ -103,13 +123,14 @@ def main():
                     help="v2-s|v2-b|v2-l|v1-l|teacher|vits|student:<ckpt> (repeatable)")
     ap.add_argument("--res-level", type=int, default=None,
                     help="official models: resolution_level (recorded per row)")
+    ap.add_argument("--out", default="", help="output JSON (default <checkpoints_dir>/fps_bench.json)")
     args = ap.parse_args()
     cfg = load_config(args.config)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device != "cuda":
         raise SystemExit("FPS benchmark needs CUDA (peak-VRAM + sync timing)")
 
-    from benchmark.run_bench import OFFICIAL
+    from benchmark.run_bench import EXTERNAL, OFFICIAL
     alias = {"teacher": "v2-l", "vits": "v2-s"}      # legacy spec names
     rows = []
     fusion_failed = []
@@ -119,6 +140,8 @@ def main():
             if spec in OFFICIAL:
                 cls_name, hub = OFFICIAL[spec]
                 rows.append(bench_official(spec, cls_name, hub, device, args.res_level))
+            elif spec in EXTERNAL:
+                rows.append(bench_external(spec, device))
             elif spec.startswith("student:"):
                 rows.append(bench_student(cfg, spec.split(":", 1)[1], device))
             else:
@@ -142,7 +165,7 @@ def main():
         "rows": rows,
     }
     print(json.dumps(out_obj, indent=2))
-    out = os.path.join(cfg["distill"]["checkpoints_dir"], "fps_bench.json")
+    out = args.out or os.path.join(cfg["distill"]["checkpoints_dir"], "fps_bench.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2)
     print("wrote", out)

@@ -20,7 +20,7 @@ import torch
 
 from common.io_utils import load_config
 from distill.dataset import IMAGENET_MEAN, IMAGENET_STD
-from distill.student import build_student
+from distill.student import DEFAULT_K, build_student, needs_intrinsics
 from teacher.unidepth_teacher import UniDepthTeacher
 
 MIN_D, MAX_D = 1e-3, 10.0  # NYU standard depth range (meters)
@@ -49,14 +49,33 @@ def metrics(gt, pred):
     return dict(AbsRel=absrel, RMSE=rmse, RMSE_log=rmse_log, log10=log10, d1=d1, d2=d2, d3=d3)
 
 
-def student_depth(model, rgb, cfg, device):
+
+
+def student_intrinsics(mode, s_cfg, oh, ow, device):
+    """A05 eval-time K for the student (normalised fx/W, fy/H, cx/W, cy/H of the ORIGINAL
+    image) or None. mode "none" (default) = historical behaviour (no K passed); "gt" = NYU
+    GT K; "default" = DEFAULT_K passed explicitly. Students that read no K always get None."""
+    if mode == "none" or not needs_intrinsics(s_cfg):
+        return None
+    if mode == "gt":
+        from benchmark.datasets_tier1 import NYU_K      # NYU Kinect RGB K (pixels, 640x480)
+        k = [NYU_K[0, 0] / ow, NYU_K[1, 1] / oh, NYU_K[0, 2] / ow, NYU_K[1, 2] / oh]
+    elif mode == "default":
+        k = list(DEFAULT_K)
+    else:
+        raise ValueError(f"unknown student K mode {mode!r}")
+    return torch.tensor([k], dtype=torch.float32, device=device)
+
+
+def student_depth(model, rgb, cfg, device, k_mode="none", s_cfg=None):
     th, tw = int(cfg["student"]["train_size"][0]), int(cfg["student"]["train_size"][1])
     oh, ow = rgb.shape[:2]
     rz = cv2.resize(rgb, (tw, th), interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
     rz = (rz - IMAGENET_MEAN) / IMAGENET_STD
     t = torch.from_numpy(np.ascontiguousarray(np.transpose(rz, (2, 0, 1)))).float()[None].to(device)
+    intr = student_intrinsics(k_mode, s_cfg if s_cfg is not None else cfg["student"], oh, ow, device)
     with torch.no_grad():
-        dm = model.infer_metres(t)[0, 0].cpu().numpy()
+        dm = (model.infer_metres(t) if intr is None else model.infer_metres(t, intr))[0, 0].cpu().numpy()
     return cv2.resize(dm, (ow, oh), interpolation=cv2.INTER_LINEAR)
 
 
@@ -66,6 +85,11 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--ckpt", default="")
     ap.add_argument("--no-crop", action="store_true", help="disable the Eigen crop")
+    ap.add_argument("--student-k", default="none", choices=["none", "gt", "default"],
+                    help="A05: K passed to the student: none (historical; FiLM off), gt (NYU "
+                         "GT K) or default (assumed DEFAULT_K)")
+    ap.add_argument("--out", default="", help="result JSON path (default: <checkpoints_dir>/"
+                                               "eval_nyu_gt.json, suffixed for --student-k)")
     args = ap.parse_args()
     cfg = load_config(args.config)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -81,6 +105,7 @@ def main():
     teacher.load()
     ckpt = args.ckpt or os.path.join(cfg["distill"]["checkpoints_dir"], "best.pt")
     ck = torch.load(ckpt, map_location=device, weights_only=False)
+    s_cfg = ck.get("cfg", cfg)["student"]
     student = build_student(ck.get("cfg", cfg)).to(device).eval()
     student.load_state_dict(ck["model"])
 
@@ -93,7 +118,7 @@ def main():
         h, w = gt.shape[:2]
 
         t_pred = teacher.predict(rgb, infer_longest_side=640)["depth_m"]
-        s_pred = student_depth(student, rgb, cfg, device)
+        s_pred = student_depth(student, rgb, cfg, device, args.student_k, s_cfg)
         t_pred = cv2.resize(t_pred, (w, h), interpolation=cv2.INTER_LINEAR)
         s_pred = cv2.resize(s_pred, (w, h), interpolation=cv2.INTER_LINEAR)
 
@@ -121,8 +146,11 @@ def main():
         "teacher_UniDepthV2_ViTL": summarize(acc["teacher"]),
         "student_5p1M": summarize(acc["student"]),
     }
+    if args.student_k != "none":
+        result["student_k"] = {"gt": "NYU GT K", "default": "assumed default K"}[args.student_k]
     print(json.dumps(result, indent=2))
-    out = os.path.join(cfg["distill"]["checkpoints_dir"], "eval_nyu_gt.json")
+    sfx = "" if args.student_k == "none" else f"__k{args.student_k}"
+    out = args.out or os.path.join(cfg["distill"]["checkpoints_dir"], f"eval_nyu_gt{sfx}.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
     print("wrote", out)
